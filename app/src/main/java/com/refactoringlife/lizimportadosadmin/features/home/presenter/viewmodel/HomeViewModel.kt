@@ -20,6 +20,9 @@ class HomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Idle)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     
+    private val _processedImages = MutableStateFlow<List<Uri>>(emptyList())
+    val processedImages: StateFlow<List<Uri>> = _processedImages.asStateFlow()
+    
     private val imageProcessor = ImageProcessor()
     
     /**
@@ -42,9 +45,16 @@ class HomeViewModel : ViewModel() {
                 // Procesar imágenes usando ImageProcessor
                 val results = imageProcessor.processMultipleImages(context, imageUris)
                 
-                // Contar éxitos y errores
-                val successfulCount = results.count { it.isSuccess }
-                val errorCount = results.count { it.isFailure }
+                // Filtrar solo las imágenes exitosas
+                val successfulUris = results.mapNotNull { result ->
+                    result.getOrNull()
+                }
+                
+                // Actualizar la lista de imágenes procesadas
+                _processedImages.value = successfulUris
+                
+                val successfulCount = successfulUris.size
+                val errorCount = results.size - successfulCount
                 
                 if (errorCount > 0) {
                     Log.w(TAG, "⚠️ $errorCount imágenes fallaron al procesar")
@@ -65,6 +75,13 @@ class HomeViewModel : ViewModel() {
      */
     fun resetState() {
         _uiState.value = HomeUiState.Idle
+    }
+    
+    /**
+     * Limpia las imágenes procesadas
+     */
+    fun clearProcessedImages() {
+        _processedImages.value = emptyList()
     }
 }
 

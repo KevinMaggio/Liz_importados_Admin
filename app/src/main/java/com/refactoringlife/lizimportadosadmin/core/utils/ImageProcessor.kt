@@ -16,7 +16,7 @@ class ImageProcessor {
     companion object {
         private const val TAG = "ImageProcessor"
         private const val WHITE_THRESHOLD = 240 // Umbral para considerar un píxel como "blanco"
-        private const val TRANSPARENCY_THRESHOLD = 0.1f // Umbral de transparencia
+        private const val MAX_IMAGE_SIZE = 1024 // Tamaño máximo para procesar
     }
     
     /**
@@ -29,14 +29,33 @@ class ImageProcessor {
         try {
             Log.d(TAG, "🖼️ Procesando imagen: $imageUri")
             
-            // Decodificar la imagen
+            // Decodificar la imagen con opciones para optimizar memoria
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            
             val inputStream = context.contentResolver.openInputStream(imageUri)
-            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            BitmapFactory.decodeStream(inputStream, null, options)
             inputStream?.close()
+            
+            // Calcular el factor de escala para mantener la imagen en un tamaño manejable
+            val scale = calculateInSampleSize(options, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE)
+            
+            // Decodificar la imagen con el tamaño optimizado
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = scale
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+            
+            val inputStream2 = context.contentResolver.openInputStream(imageUri)
+            val originalBitmap = BitmapFactory.decodeStream(inputStream2, null, decodeOptions)
+            inputStream2?.close()
             
             if (originalBitmap == null) {
                 return@withContext Result.failure(Exception("No se pudo decodificar la imagen"))
             }
+            
+            Log.d(TAG, "📏 Imagen original: ${originalBitmap.width}x${originalBitmap.height}")
             
             // Crear bitmap con canal alfa
             val processedBitmap = Bitmap.createBitmap(
@@ -45,31 +64,31 @@ class ImageProcessor {
                 Bitmap.Config.ARGB_8888
             )
             
-            // Procesar píxel por píxel
-            for (x in 0 until originalBitmap.width) {
-                for (y in 0 until originalBitmap.height) {
-                    val pixel = originalBitmap.getPixel(x, y)
-                    
-                    val red = android.graphics.Color.red(pixel)
-                    val green = android.graphics.Color.green(pixel)
-                    val blue = android.graphics.Color.blue(pixel)
-                    
-                    // Verificar si el píxel es "blanco" (cerca del blanco)
-                    val isWhite = red >= WHITE_THRESHOLD && 
-                                 green >= WHITE_THRESHOLD && 
-                                 blue >= WHITE_THRESHOLD
-                    
-                    val newPixel = if (isWhite) {
-                        // Hacer transparente
-                        android.graphics.Color.TRANSPARENT
-                    } else {
-                        // Mantener el color original
-                        pixel
-                    }
-                    
-                    processedBitmap.setPixel(x, y, newPixel)
+            // Procesar píxel por píxel de manera más eficiente
+            val pixels = IntArray(originalBitmap.width * originalBitmap.height)
+            originalBitmap.getPixels(pixels, 0, originalBitmap.width, 0, 0, originalBitmap.width, originalBitmap.height)
+            
+            for (i in pixels.indices) {
+                val pixel = pixels[i]
+                val red = android.graphics.Color.red(pixel)
+                val green = android.graphics.Color.green(pixel)
+                val blue = android.graphics.Color.blue(pixel)
+                
+                // Verificar si el píxel es "blanco" (cerca del blanco)
+                val isWhite = red >= WHITE_THRESHOLD && 
+                             green >= WHITE_THRESHOLD && 
+                             blue >= WHITE_THRESHOLD
+                
+                pixels[i] = if (isWhite) {
+                    // Hacer transparente
+                    android.graphics.Color.TRANSPARENT
+                } else {
+                    // Mantener el color original
+                    pixel
                 }
             }
+            
+            processedBitmap.setPixels(pixels, 0, originalBitmap.width, 0, 0, originalBitmap.width, originalBitmap.height)
             
             // Guardar la imagen procesada
             val processedUri = saveProcessedImage(context, processedBitmap)
@@ -88,6 +107,30 @@ class ImageProcessor {
     }
     
     /**
+     * Calcula el factor de escala para optimizar el tamaño de la imagen
+     */
+    private fun calculateInSampleSize(
+        options: BitmapFactory.Options,
+        reqWidth: Int,
+        reqHeight: Int
+    ): Int {
+        val height = options.outHeight
+        val width = options.outWidth
+        var inSampleSize = 1
+        
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight = height / 2
+            val halfWidth = width / 2
+            
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        
+        return inSampleSize
+    }
+    
+    /**
      * Guarda la imagen procesada en el almacenamiento interno
      */
     private fun saveProcessedImage(context: Context, bitmap: Bitmap): Uri {
@@ -98,6 +141,7 @@ class ImageProcessor {
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
         outputStream.close()
         
+        Log.d(TAG, "💾 Imagen guardada: ${file.absolutePath}")
         return Uri.fromFile(file)
     }
     

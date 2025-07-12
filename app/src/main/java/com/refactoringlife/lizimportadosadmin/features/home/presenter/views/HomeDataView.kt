@@ -1,5 +1,6 @@
 package com.refactoringlife.lizimportadosadmin.features.home.presenter.views
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.refactoringlife.lizimportadosadmin.features.home.composables.ProcessedImagesGallery
 import com.refactoringlife.lizimportadosadmin.features.home.presenter.viewmodel.HomeUiState
 import com.refactoringlife.lizimportadosadmin.ui.theme.ColorWhiteLipsy
 
@@ -26,7 +30,9 @@ import com.refactoringlife.lizimportadosadmin.ui.theme.ColorWhiteLipsy
 fun HomeDataView(
     modifier: Modifier = Modifier,
     uiState: HomeUiState = HomeUiState.Idle,
-    onProcessImagesClick: () -> Unit = {}
+    processedImages: List<Uri> = emptyList(),
+    onProcessImagesClick: () -> Unit = {},
+    onClearImagesClick: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
@@ -35,7 +41,9 @@ fun HomeDataView(
             .padding(20.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -142,6 +150,25 @@ fun HomeDataView(
                     ) {
                         Text("Reintentar")
                     }
+                }
+            }
+            
+            // Mostrar galería de imágenes procesadas
+            if (processedImages.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                ProcessedImagesGallery(
+                    images = processedImages,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = onClearImagesClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Limpiar Imágenes")
                 }
             }
         }
