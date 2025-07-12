@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.composablesLipsy
+package com.refactoringlife.lizimportadosadmin.core.composablesLipsy
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,9 +21,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
-import com.refactoringlife.lizimportados.R
-import com.refactoringlife.lizimportados.core.utils.shimmerEffect
-import com.refactoringlife.lizimportados.ui.theme.CardBackGround
+import com.refactoringlife.lizimportadosadmin.R
+import com.refactoringlife.lizimportadosadmin.core.utils.shimmerEffect
+import com.refactoringlife.lizimportadosadmin.ui.theme.CardBackGround
 
 @Composable
 fun LipsyCardImage(url: String?, modifier: Modifier= Modifier) {

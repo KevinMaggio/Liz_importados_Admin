@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.network.fireStore
+package com.refactoringlife.lizimportadosadmin.core.network.fireStore
 
 import com.google.firebase.firestore.FirebaseFirestore
 

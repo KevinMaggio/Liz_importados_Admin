@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.composablesLipsy
+package com.refactoringlife.lizimportadosadmin.core.composablesLipsy
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,9 +18,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.refactoringlife.lizimportados.R
-import com.refactoringlife.lizimportados.core.utils.EMPTY
-import com.refactoringlife.lizimportados.ui.theme.CircleFilterColor
+import com.refactoringlife.lizimportadosadmin.R
+import com.refactoringlife.lizimportadosadmin.core.utils.EMPTY
+import com.refactoringlife.lizimportadosadmin.ui.theme.CircleFilterColor
 
 @Composable
 fun LipsyCircleButton(

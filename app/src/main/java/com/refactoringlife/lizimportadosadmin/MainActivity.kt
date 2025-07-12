@@ -6,50 +6,33 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.refactoringlife.lizimportadosadmin.ui.theme.LizImportadosAdminTheme
+import com.refactoringlife.lizimportadosadmin.core.navigator.AppNavHost
+import com.refactoringlife.lizimportadosadmin.features.login.presenter.viewmodel.LoginViewModel
 
 class MainActivity : ComponentActivity() {
+    private val loginViewModel: LoginViewModel by lazy { LoginViewModel() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             LizImportadosAdminTheme {
                 val navController = rememberNavController()
-
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                ) { innerPadding ->
+                ) { padding ->
                     AppNavHost(
                         navController = navController,
-                        modifier = Modifier.navigationBarsPadding(),
-                        onGoogleSignInClick = { intent ->
-                            googleSignInLauncher.launch(intent)
-                        }
+                        modifier = Modifier.navigationBarsPadding().padding(padding),
+                        viewModel = loginViewModel
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LizImportadosAdminTheme {
-        Greeting("Android")
     }
 }

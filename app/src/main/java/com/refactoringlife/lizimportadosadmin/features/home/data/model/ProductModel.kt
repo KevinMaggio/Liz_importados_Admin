@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.features.home.data.model
+package com.refactoringlife.lizimportadosadmin.features.home.data.model
 
 data class ProductModel(
     val id: String,

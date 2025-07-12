@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.utils
+package com.refactoringlife.lizimportadosadmin.core.utils
 
 import android.content.Context
 import android.content.Intent

@@ -8,8 +8,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import com.refactoringlife.lizimportados.core.utils.GOOGLE_ID
-import com.refactoringlife.lizimportados.core.utils.getGoogleSignInIntent
+import com.refactoringlife.lizimportadosadmin.core.utils.GOOGLE_ID
+import com.refactoringlife.lizimportadosadmin.core.utils.getGoogleSignInIntent
 import kotlinx.coroutines.tasks.await
 import android.util.Log
 

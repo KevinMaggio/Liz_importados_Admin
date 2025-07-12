@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.composablesLipsy
+package com.refactoringlife.lizimportadosadmin.core.composablesLipsy
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -11,19 +11,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.refactoringlife.lizimportados.R
-import com.refactoringlife.lizimportados.core.utils.capitalizeWords
-import com.refactoringlife.lizimportados.core.utils.onValid
-import com.refactoringlife.lizimportados.features.home.data.model.ProductModel
-import com.refactoringlife.lizimportados.ui.theme.TextBlue
-import com.refactoringlife.lizimportados.ui.theme.TextPrimary
-import com.refactoringlife.lizimportados.ui.theme.TextSecondary
+import com.refactoringlife.lizimportadosadmin.R
+import com.refactoringlife.lizimportadosadmin.core.utils.capitalizeWords
+import com.refactoringlife.lizimportadosadmin.core.utils.onValid
+import com.refactoringlife.lizimportadosadmin.features.home.data.model.ProductModel
+import com.refactoringlife.lizimportadosadmin.ui.theme.TextBlue
+import com.refactoringlife.lizimportadosadmin.ui.theme.TextPrimary
+import com.refactoringlife.lizimportadosadmin.ui.theme.TextSecondary
 
 typealias id = String
 @Composable
@@ -91,7 +90,7 @@ fun LipsyProduct(
 
         if (isAvailable) {
             Text(
-                text = stringResource(R.string.add_cart),
+                text = "Agregar a carrito",
                 fontFamily = FontFamily(Font(R.font.montserrat_regular)),
                 fontSize = 10.sp,
                 lineHeight = 1.sp,

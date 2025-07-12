@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.composablesLipsy
+package com.refactoringlife.lizimportadosadmin.core.composablesLipsy
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -7,7 +7,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.refactoringlife.lizimportados.ui.theme.ColorGrayLipsy
+import com.refactoringlife.lizimportadosadmin.ui.theme.ColorGrayLipsy
 
 @Composable
 fun LipsyDivider(){

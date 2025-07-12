@@ -1,7 +1,7 @@
 package com.refactoringlife.lizimportados.core.network.service
 
 import com.refactoringlife.lizimportados.core.network.fireStore.FireStoreResponse
-import com.refactoringlife.lizimportados.features.home.data.model.ProductModel
+import com.refactoringlife.lizimportadosadmin.features.home.data.model.ProductModel
 import kotlinx.coroutines.flow.Flow
 
 class ProductService(

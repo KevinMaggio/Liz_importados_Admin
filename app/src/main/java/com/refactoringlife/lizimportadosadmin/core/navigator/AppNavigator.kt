@@ -9,17 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
-import com.refactoringlife.lizimportados.core.navigator.navigateFromLoginToHome
 import com.refactoringlife.lizimportadosadmin.features.home.presenter.screens.HomeScreen
-import com.refactoringlife.lizimportados.features.login.presenter.screens.LoginScreen
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.screens.LoginScreen
+import com.refactoringlife.lizimportadosadmin.features.login.presenter.viewmodel.LoginViewModel
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    onGoogleSignInClick: (Intent) -> Unit = {}
+    onGoogleSignInClick: (Intent) -> Unit = {},
+    viewModel: LoginViewModel
 ) {
     AnimatedNavHost(
         navController = navController,
@@ -33,9 +33,13 @@ fun AppNavHost(
         ) {
             LoginScreen(
                 onGoogleClick = {
-                    navController.navigateFromLoginToHome()
+                    navController.navigate(AppRoutes.HOME) {
+                        popUpTo(AppRoutes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 },
-                onGoogleSignInClick = onGoogleSignInClick
+                onGoogleSignInClick = onGoogleSignInClick,
+                viewModel = viewModel
             )
         }
 
@@ -44,10 +48,7 @@ fun AppNavHost(
             enterTransition = { fadeIn() },
             exitTransition = { fadeOut() }
         ) {
-            HomeScreen(
-                modifier = Modifier,
-                navController
-            )
+            HomeScreen()
         }
     }
 }

@@ -1,8 +1,8 @@
-package com.refactoringlife.lizimportados.core.utils
+package com.refactoringlife.lizimportadosadmin.core.utils
 
 import com.refactoringlife.lizimportados.core.dto.response.ConfigResponse
 import com.refactoringlife.lizimportados.features.home.data.model.CombosModel
-import com.refactoringlife.lizimportados.features.home.data.model.ProductModel
+import com.refactoringlife.lizimportadosadmin.features.home.data.model.ProductModel
 
 fun getProductsMock() = listOf(
     ProductModel(

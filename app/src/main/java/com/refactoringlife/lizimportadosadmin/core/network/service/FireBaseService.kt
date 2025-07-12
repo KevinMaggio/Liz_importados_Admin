@@ -2,7 +2,7 @@ package com.refactoringlife.lizimportados.core.network.service
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.refactoringlife.lizimportados.core.network.fireStore.FireStoreResponse
-import com.refactoringlife.lizimportados.core.network.fireStore.FirebaseProvider
+import com.refactoringlife.lizimportadosadmin.core.network.fireStore.FirebaseProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

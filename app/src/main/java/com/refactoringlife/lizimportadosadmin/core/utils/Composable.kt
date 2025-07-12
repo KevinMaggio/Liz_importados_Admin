@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.utils
+package com.refactoringlife.lizimportadosadmin.core.utils
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.core.LinearEasing
@@ -19,6 +19,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
+import com.refactoringlife.lizimportadosadmin.core.utils.CUSTOM_GRAY_SHIMMER
+import com.refactoringlife.lizimportadosadmin.core.utils.EMPTY
+import com.refactoringlife.lizimportadosadmin.core.utils.SHIMMER_DURATION
+import com.refactoringlife.lizimportadosadmin.core.utils.SHIMMER_INITIAL_CONSTANT
+import com.refactoringlife.lizimportadosadmin.core.utils.SHIMMER_TARGET_CONSTANT
+import com.refactoringlife.lizimportadosadmin.core.utils.ZERO
+import com.refactoringlife.lizimportadosadmin.core.utils.ZERO_FLOAT
 
 @SuppressLint("ModifierFactoryUnreferencedReceiver")
 fun Modifier.shimmerEffect(): Modifier = composed {
