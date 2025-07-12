@@ -13,9 +13,18 @@ import androidx.navigation.compose.rememberNavController
 import com.refactoringlife.lizimportadosadmin.ui.theme.LizImportadosAdminTheme
 import com.refactoringlife.lizimportadosadmin.core.navigator.AppNavHost
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.viewmodel.LoginViewModel
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
 
 class MainActivity : ComponentActivity() {
     private val loginViewModel: LoginViewModel by lazy { LoginViewModel() }
+
+    // Launcher para Google Sign-In
+    private val googleSignInLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data: Intent? = result.data
+            loginViewModel.handleSignInResult(data)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +38,10 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(
                         navController = navController,
                         modifier = Modifier.navigationBarsPadding().padding(padding),
-                        viewModel = loginViewModel
+                        viewModel = loginViewModel,
+                        onGoogleSignInClick = { intent ->
+                            googleSignInLauncher.launch(intent)
+                        }
                     )
                 }
             }
