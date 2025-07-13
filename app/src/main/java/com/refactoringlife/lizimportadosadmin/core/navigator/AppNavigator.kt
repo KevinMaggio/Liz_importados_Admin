@@ -13,6 +13,8 @@ import com.refactoringlife.lizimportadosadmin.features.home.presenter.screens.Ho
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.screens.LoginScreen
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.viewmodel.LoginViewModel
 import com.refactoringlife.lizimportadosadmin.features.addProduct.presenter.screens.AddProductScreen
+import com.refactoringlife.lizimportadosadmin.features.combo.presenter.screens.CreateComboScreen
+import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.EditProductScreen
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -58,6 +60,22 @@ fun AppNavHost(
             exitTransition = { fadeOut() }
         ) {
             AddProductScreen()
+        }
+
+        composable(
+            "create_combo",
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
+            CreateComboScreen()
+        }
+
+        composable(
+            "edit_product",
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
+            EditProductScreen()
         }
     }
 }
