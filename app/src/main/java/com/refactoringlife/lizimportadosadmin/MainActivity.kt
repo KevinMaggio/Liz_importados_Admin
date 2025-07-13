@@ -15,9 +15,10 @@ import com.refactoringlife.lizimportadosadmin.core.navigator.AppNavHost
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.viewmodel.LoginViewModel
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 
 class MainActivity : ComponentActivity() {
-    private val loginViewModel: LoginViewModel by lazy { LoginViewModel() }
+    private val loginViewModel: LoginViewModel by viewModels()
 
     // Launcher para Google Sign-In
     private val googleSignInLauncher =

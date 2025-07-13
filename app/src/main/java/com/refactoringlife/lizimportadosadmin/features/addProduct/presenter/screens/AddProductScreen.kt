@@ -14,16 +14,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,8 +35,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.storage.ktx.storage
@@ -55,12 +63,15 @@ import kotlin.coroutines.resumeWithException
 fun AddProductScreen() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
     val (processing, setProcessing) = remember { mutableStateOf(false) }
     val (selectedUris, setSelectedUris) = remember { mutableStateOf<List<Uri>>(emptyList()) }
     val (uploadedUrls, setUploadedUrls) = remember { mutableStateOf<List<String>>(emptyList()) }
     val (uploadChecks, setUploadChecks) = remember { mutableStateOf<List<Boolean>>(emptyList()) }
     val (error, setError) = remember { mutableStateOf<String?>(null) }
     val (success, setSuccess) = remember { mutableStateOf<String?>(null) }
+    val (showSuccess, setShowSuccess) = remember { mutableStateOf(false) }
 
     // Campos del formulario
     val (name, setName) = remember { mutableStateOf("") }
@@ -120,94 +131,189 @@ fun AddProductScreen() {
     }
 
     Box(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().imePadding(),
         contentAlignment = Alignment.TopCenter
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.TopCenter))
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Button(onClick = { imagePickerLauncher.launch("image/*") }, enabled = !processing) {
-                Text("Seleccionar Imágenes")
+            item {
+                Text(
+                    text = "Agregar Producto",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
+                )
+                Button(onClick = { imagePickerLauncher.launch("image/*") }, enabled = !processing) {
+                    Text("Seleccionar Imágenes")
+                }
+                if (processing) {
+                    CircularProgressIndicator(modifier = Modifier.padding(24.dp))
+                }
+                if (selectedUris.isNotEmpty()) {
+                    Text("Imágenes seleccionadas:", modifier = Modifier.padding(top = 16.dp))
+                }
             }
-            if (processing) {
-                CircularProgressIndicator(modifier = Modifier.padding(24.dp))
-            }
-            if (selectedUris.isNotEmpty()) {
-                Text("Imágenes seleccionadas:", modifier = Modifier.padding(top = 16.dp))
-                selectedUris.forEachIndexed { idx, _ ->
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
-                        Checkbox(checked = uploadChecks.getOrNull(idx) == true, onCheckedChange = null, enabled = false)
-                        Text("Imagen ${idx + 1}")
-                        if (uploadChecks.getOrNull(idx) == true) {
-                            Icon(Icons.Filled.CheckCircle, contentDescription = "Subida", tint = Color(0xFF388E3C), modifier = Modifier.size(20.dp).padding(start = 4.dp))
-                        }
+            itemsIndexed(selectedUris) { idx, _ ->
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
+                    Checkbox(checked = uploadChecks.getOrNull(idx) == true, onCheckedChange = null, enabled = false)
+                    Text("Imagen ${idx + 1}")
+                    if (uploadChecks.getOrNull(idx) == true) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = "Subida", tint = Color(0xFF388E3C), modifier = Modifier.size(20.dp).padding(start = 4.dp))
                     }
                 }
             }
-            if (error != null) {
-                Text(text = "Error: $error", modifier = Modifier.padding(top = 16.dp), color = Color.Red)
-            }
-            if (success != null) {
-                Text(text = "Producto guardado con éxito: $success", modifier = Modifier.padding(top = 16.dp), color = Color(0xFF388E3C))
-            }
-            Spacer(modifier = Modifier.size(16.dp))
-            // Formulario de producto
-            OutlinedTextField(value = name, onValueChange = setName, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = description, onValueChange = setDescription, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = brand, onValueChange = setBrand, label = { Text("Marca") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = category, onValueChange = setCategory, label = { Text("Categoría") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = comboId, onValueChange = setComboId, label = { Text("Combo IDs (separados por coma)") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = comboPrice, onValueChange = setComboPrice, label = { Text("Combo Precio") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = gender, onValueChange = setGender, label = { Text("Género") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = offerPrice, onValueChange = setOfferPrice, label = { Text("Precio Oferta") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = price, onValueChange = setPrice, label = { Text("Precio") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = season, onValueChange = setSeason, label = { Text("Temporada") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = circleOptionFilter, onValueChange = setCircleOptionFilter, label = { Text("Filtro Círculo") }, modifier = Modifier.fillMaxWidth())
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = isAvailable, onCheckedChange = setIsAvailable)
-                Text("Disponible")
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = isOffer, onCheckedChange = setIsOffer)
-                Text("En Oferta")
-            }
-            Spacer(modifier = Modifier.size(16.dp))
-            Button(
-                onClick = {
-                    setProcessing(true)
-                    coroutineScope.launch {
-                        val id = UUID.randomUUID().toString()
-                        val product = ProductRequest(
-                            id = id,
-                            name = name.ifBlank { null },
-                            description = description.ifBlank { null },
-                            brand = brand.ifBlank { null },
-                            category = category.ifBlank { null },
-                            comboId = if (comboId.isNotBlank()) comboId.split(",").map { it.trim() } else null,
-                            comboPrice = comboPrice.toIntOrNull(),
-                            gender = gender.ifBlank { null },
-                            images = if (uploadedUrls.isNotEmpty()) uploadedUrls else null,
-                            isAvailable = isAvailable,
-                            isOffer = isOffer,
-                            offerPrice = offerPrice.toIntOrNull() ?: 0,
-                            price = price.toIntOrNull(),
-                            season = season.ifBlank { null },
-                            circleOptionFilter = circleOptionFilter.ifBlank { null }
-                        )
-                        val result = saveProductToFirestore(product)
-                        if (result.isSuccess) {
-                            setSuccess(product.id)
-                        } else {
-                            setError(result.exceptionOrNull()?.message)
+            item {
+                if (error != null) {
+                    Text(text = "Error: $error", modifier = Modifier.padding(top = 16.dp), color = Color.Red)
+                }
+                Spacer(modifier = Modifier.size(16.dp))
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = setName,
+                    label = { Text("Nombre") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Nombre", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = setDescription,
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Descripción", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = setBrand,
+                    label = { Text("Marca") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Marca", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = setCategory,
+                    label = { Text("Categoría") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Categoría", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = comboId,
+                    onValueChange = setComboId,
+                    label = { Text("Combo IDs (separados por coma)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Combo IDs", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = comboPrice,
+                    onValueChange = setComboPrice,
+                    label = { Text("Combo Precio") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Combo Precio", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = gender,
+                    onValueChange = setGender,
+                    label = { Text("Género") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Género", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = offerPrice,
+                    onValueChange = setOfferPrice,
+                    label = { Text("Precio Oferta") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Precio Oferta", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = price,
+                    onValueChange = setPrice,
+                    label = { Text("Precio") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Precio", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = season,
+                    onValueChange = setSeason,
+                    label = { Text("Temporada") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Temporada", color = Color.Gray) }
+                )
+                OutlinedTextField(
+                    value = circleOptionFilter,
+                    onValueChange = setCircleOptionFilter,
+                    label = { Text("Filtro Círculo") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Filtro Círculo", color = Color.Gray) }
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = isAvailable, onCheckedChange = setIsAvailable)
+                    Text("Disponible")
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = isOffer, onCheckedChange = setIsOffer)
+                    Text("En Oferta")
+                }
+                Spacer(modifier = Modifier.size(16.dp))
+                Button(
+                    onClick = {
+                        setProcessing(true)
+                        focusManager.clearFocus()
+                        coroutineScope.launch {
+                            val id = UUID.randomUUID().toString()
+                            val product = ProductRequest(
+                                id = id,
+                                name = name.ifBlank { null },
+                                description = description.ifBlank { null },
+                                brand = brand.ifBlank { null },
+                                category = category.ifBlank { null },
+                                comboId = if (comboId.isNotBlank()) comboId.split(",").map { it.trim() } else null,
+                                comboPrice = comboPrice.toIntOrNull(),
+                                gender = gender.ifBlank { null },
+                                images = if (uploadedUrls.isNotEmpty()) uploadedUrls else null,
+                                isAvailable = isAvailable,
+                                isOffer = isOffer,
+                                offerPrice = offerPrice.toIntOrNull() ?: 0,
+                                price = price.toIntOrNull(),
+                                season = season.ifBlank { null },
+                                circleOptionFilter = circleOptionFilter.ifBlank { null }
+                            )
+                            val result = saveProductToFirestore(product)
+                            if (result.isSuccess) {
+                                setSuccess(product.id)
+                                setShowSuccess(true)
+                                snackbarHostState.showSnackbar("Producto guardado con éxito")
+                                // Limpiar formulario
+                                setName("")
+                                setDescription("")
+                                setBrand("")
+                                setCategory("")
+                                setComboId("")
+                                setComboPrice("")
+                                setGender("")
+                                setIsAvailable(false)
+                                setIsOffer(false)
+                                setOfferPrice("")
+                                setPrice("")
+                                setSeason("")
+                                setCircleOptionFilter("")
+                                setSelectedUris(emptyList())
+                                setUploadedUrls(emptyList())
+                                setUploadChecks(emptyList())
+                            } else {
+                                setError(result.exceptionOrNull()?.message)
+                            }
+                            setProcessing(false)
                         }
-                        setProcessing(false)
-                    }
-                },
-                enabled = !processing && uploadedUrls.isNotEmpty() && uploadedUrls.size == selectedUris.size
-            ) {
-                Text("Guardar Producto")
+                    },
+                    enabled = !processing && uploadedUrls.isNotEmpty() && uploadedUrls.size == selectedUris.size
+                ) {
+                    Text("Finalizar carga")
+                }
             }
         }
     }
