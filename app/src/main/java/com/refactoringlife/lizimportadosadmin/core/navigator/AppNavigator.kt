@@ -12,6 +12,7 @@ import com.google.accompanist.navigation.animation.composable
 import com.refactoringlife.lizimportadosadmin.features.home.presenter.screens.HomeScreen
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.screens.LoginScreen
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.viewmodel.LoginViewModel
+import com.refactoringlife.lizimportadosadmin.features.addProduct.presenter.screens.AddProductScreen
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -48,7 +49,15 @@ fun AppNavHost(
             enterTransition = { fadeIn() },
             exitTransition = { fadeOut() }
         ) {
-            HomeScreen()
+            HomeScreen(navController = navController)
+        }
+
+        composable(
+            "add_product",
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
+            AddProductScreen()
         }
     }
 }

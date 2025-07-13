@@ -32,7 +32,8 @@ fun HomeDataView(
     uiState: HomeUiState = HomeUiState.Idle,
     processedImages: List<Uri> = emptyList(),
     onProcessImagesClick: () -> Unit = {},
-    onClearImagesClick: () -> Unit = {}
+    onClearImagesClick: () -> Unit = {},
+    onNavigateToAddProduct: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
@@ -64,6 +65,17 @@ fun HomeDataView(
                             .size(height = 56.dp, width = 200.dp)
                     ) {
                         Text("Procesar Imágenes")
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Button(
+                        onClick = onNavigateToAddProduct,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .size(height = 56.dp, width = 200.dp)
+                    ) {
+                        Text("Agregar Producto (Subir Imagen)")
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))

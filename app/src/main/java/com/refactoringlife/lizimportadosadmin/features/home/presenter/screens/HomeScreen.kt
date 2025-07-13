@@ -12,11 +12,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.refactoringlife.lizimportadosadmin.features.home.presenter.viewmodel.HomeUiState
 import com.refactoringlife.lizimportadosadmin.features.home.presenter.viewmodel.HomeViewModel
 import com.refactoringlife.lizimportadosadmin.features.home.presenter.views.HomeDataView
+import androidx.navigation.NavHostController
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = HomeViewModel()
+    viewModel: HomeViewModel = HomeViewModel(),
+    navController: NavHostController? = null
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val processedImages by viewModel.processedImages.collectAsStateWithLifecycle()
@@ -50,6 +52,9 @@ fun HomeScreen(
         },
         onClearImagesClick = {
             viewModel.clearProcessedImages()
+        },
+        onNavigateToAddProduct = {
+            navController?.navigate("add_product")
         }
     )
 }
