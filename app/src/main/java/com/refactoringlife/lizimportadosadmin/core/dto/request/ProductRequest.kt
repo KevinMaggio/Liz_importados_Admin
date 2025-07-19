@@ -4,32 +4,33 @@ import kotlinx.serialization.SerialName
 
 data class ProductRequest (
     @SerialName("id")
-    val id : String,
+    val id : String = "",
     @SerialName("name")
-    val name: String?,
+    val name: String? = null,
     @SerialName("description")
-    val description: String?,
+    val description: String? = null,
     @SerialName("brand")
-    val brand: String?,
+    val brand: String? = null,
     @SerialName("category")
-    val category: String?,
+    val category: String? = null,
     @SerialName("combo_id")
     val comboId: List<String>? = null,
     @SerialName("combo_price")
-    val comboPrice: Int?,
+    val comboPrice: Int? = null,
     @SerialName("gender")
-    val gender: String?,
+    val gender: String? = null,
     @SerialName("images")
-    val images: List<String>?,
+    val images: List<String>? = null,
     @SerialName("is_available")
-    val isAvailable: Boolean?,
+    val isAvailable: Boolean? = null,
     @SerialName("is_offer")
-    val isOffer: Boolean?,
+    val isOffer: Boolean? = null,
     @SerialName("offer_price")
-    val offerPrice: Int,
+    val offerPrice: Int = 0,
     @SerialName("price")
-    val price: Int?,
+    val price: Int? = null,
     @SerialName("season")
-    val season: String?,
+    val season: String? = null,
     @SerialName("circle_option_filter")
-    val circleOptionFilter: String?)
+    val circleOptionFilter: String? = null
+)

@@ -16,10 +16,13 @@ fun HomeScreen(
             navController?.navigate("add_product")
         },
         onNavigateToEditProduct = {
-            navController?.navigate("edit_product")
+            navController?.navigate("edit_product_select")
         },
         onNavigateToCreateCombo = {
             navController?.navigate("create_combo")
+        },
+        onNavigateToDeleteProduct = {
+            navController?.navigate("delete_product")
         }
     )
 }

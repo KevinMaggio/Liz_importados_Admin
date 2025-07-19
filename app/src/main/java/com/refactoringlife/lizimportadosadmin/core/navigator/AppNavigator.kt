@@ -1,6 +1,8 @@
 package com.refactoringlife.lizimportadosadmin.core.navigator
 
 import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,8 +16,11 @@ import com.refactoringlife.lizimportadosadmin.features.login.presenter.screens.L
 import com.refactoringlife.lizimportadosadmin.features.login.presenter.viewmodel.LoginViewModel
 import com.refactoringlife.lizimportadosadmin.features.addProduct.presenter.screens.AddProductScreen
 import com.refactoringlife.lizimportadosadmin.features.combo.presenter.screens.CreateComboScreen
-import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.EditProductScreen
+import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.SelectProductForEditScreen
+import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.EditProductDetailScreen
+import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.DeleteProductScreen
 
+@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavHost(
@@ -71,11 +76,28 @@ fun AppNavHost(
         }
 
         composable(
-            "edit_product",
+            "edit_product_select",
             enterTransition = { fadeIn() },
             exitTransition = { fadeOut() }
         ) {
-            EditProductScreen()
+            SelectProductForEditScreen(onProductSelected = { productId ->
+                navController.navigate("edit_product_detail/$productId")
+            })
+        }
+        composable(
+            "edit_product_detail/{productId}",
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+            EditProductDetailScreen(productId = productId, onBack = { navController.popBackStack() })
+        }
+        composable(
+            "delete_product",
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
+            DeleteProductScreen()
         }
     }
 }

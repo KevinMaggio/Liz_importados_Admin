@@ -24,7 +24,8 @@ fun HomeDataView(
     modifier: Modifier = Modifier,
     onNavigateToAddProduct: () -> Unit = {},
     onNavigateToEditProduct: () -> Unit = {},
-    onNavigateToCreateCombo: () -> Unit = {}
+    onNavigateToCreateCombo: () -> Unit = {},
+    onNavigateToDeleteProduct: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
@@ -67,6 +68,15 @@ fun HomeDataView(
                     .size(height = 56.dp, width = 200.dp)
             ) {
                 Text("Crear Combo de Productos")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onNavigateToDeleteProduct,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .size(height = 56.dp, width = 200.dp)
+            ) {
+                Text("Eliminar Producto")
             }
         }
     }
