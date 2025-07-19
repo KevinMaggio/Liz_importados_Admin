@@ -1,11 +1,9 @@
 package com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,17 +20,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-// Modelo ligero para la lista
- data class ProductLight(
-    val id: String,
-    val name: String?,
-    val image: String?,
-    val brand: String? = null,
-    val category: String? = null
-)
 
 @Composable
-fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
+fun VenderProductoScreen() {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var products by remember { mutableStateOf<List<ProductLight>>(emptyList()) }
@@ -67,8 +57,9 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
                     val image = images?.firstOrNull() as? String
                     val brand = doc.getString("brand")
                     val category = doc.getString("category")
-                    ProductLight(id, name, image, brand, category)
-                }
+                    val isAvailable = doc.getBoolean("is_available") ?: true
+                    ProductLight(id, name, image, brand, category).takeIf { isAvailable }
+                }.filterNotNull()
                 // Filtro contains insensible a mayúsculas
                 products = allProducts.filter {
                     val value = when (field) {
@@ -145,7 +136,6 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onProductSelected(product.id) }
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -157,7 +147,20 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
                             )
                         }
                         Spacer(modifier = Modifier.size(16.dp))
-                        Text(text = product.name ?: "Sin nombre", color = Color.Black)
+                        Text(text = product.name ?: "Sin nombre", color = Color.Black, modifier = Modifier.weight(1f))
+                        Button(onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    val db = Firebase.firestore
+                                    db.collection("products").document(product.id).update("is_available", false).await()
+                                    products = products.filterNot { it.id == product.id }
+                                } catch (e: Exception) {
+                                    error = e.message
+                                }
+                            }
+                        }) {
+                            Text("Vendido")
+                        }
                     }
                 }
             }

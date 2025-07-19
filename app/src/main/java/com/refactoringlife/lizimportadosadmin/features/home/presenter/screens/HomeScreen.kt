@@ -23,6 +23,9 @@ fun HomeScreen(
         },
         onNavigateToDeleteProduct = {
             navController?.navigate("delete_product")
+        },
+        onNavigateToVenderProduct = {
+            navController?.navigate("vender_producto")
         }
     )
 }

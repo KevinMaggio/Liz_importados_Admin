@@ -19,6 +19,7 @@ import com.refactoringlife.lizimportadosadmin.features.combo.presenter.screens.C
 import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.SelectProductForEditScreen
 import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.EditProductDetailScreen
 import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.DeleteProductScreen
+import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.VenderProductoScreen
 
 @RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalAnimationApi::class)
@@ -98,6 +99,13 @@ fun AppNavHost(
             exitTransition = { fadeOut() }
         ) {
             DeleteProductScreen()
+        }
+        composable(
+            "vender_producto",
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
+            VenderProductoScreen()
         }
     }
 }

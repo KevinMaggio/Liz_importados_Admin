@@ -25,7 +25,8 @@ fun HomeDataView(
     onNavigateToAddProduct: () -> Unit = {},
     onNavigateToEditProduct: () -> Unit = {},
     onNavigateToCreateCombo: () -> Unit = {},
-    onNavigateToDeleteProduct: () -> Unit = {}
+    onNavigateToDeleteProduct: () -> Unit = {},
+    onNavigateToVenderProduct: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
@@ -77,6 +78,15 @@ fun HomeDataView(
                     .size(height = 56.dp, width = 200.dp)
             ) {
                 Text("Eliminar Producto")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onNavigateToVenderProduct,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .size(height = 56.dp, width = 200.dp)
+            ) {
+                Text("Vender Producto")
             }
         }
     }
