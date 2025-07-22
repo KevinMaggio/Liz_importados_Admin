@@ -7,9 +7,10 @@ import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import androidx.exifinterface.media.ExifInterface
+import android.graphics.Matrix
 
 class ImageProcessor {
     
@@ -48,12 +49,19 @@ class ImageProcessor {
             }
             
             val inputStream2 = context.contentResolver.openInputStream(imageUri)
-            val originalBitmap = BitmapFactory.decodeStream(inputStream2, null, decodeOptions)
+            var originalBitmap = BitmapFactory.decodeStream(inputStream2, null, decodeOptions)
             inputStream2?.close()
             
             if (originalBitmap == null) {
                 return@withContext Result.failure(Exception("No se pudo decodificar la imagen"))
             }
+            
+            // Leer orientación EXIF y rotar si es necesario
+            val exifInputStream = context.contentResolver.openInputStream(imageUri)
+            val exif = exifInputStream?.let { ExifInterface(it) }
+            val orientation = exif?.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            exifInputStream?.close()
+            originalBitmap = orientation?.let { rotateBitmapIfNeeded(originalBitmap!!, it) } ?: originalBitmap
             
             Log.d(TAG, "📏 Imagen original: ${originalBitmap.width}x${originalBitmap.height}")
             
@@ -163,5 +171,20 @@ class ImageProcessor {
         }
         
         results
+    }
+
+    // Agregar funciones auxiliares para rotar el bitmap
+    private fun rotateBitmapIfNeeded(bitmap: Bitmap, orientation: Int): Bitmap {
+        return when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotateBitmap(bitmap, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotateBitmap(bitmap, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotateBitmap(bitmap, 270f)
+            else -> bitmap
+        }
+    }
+    private fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 } 

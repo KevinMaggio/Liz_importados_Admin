@@ -78,15 +78,9 @@ fun AddProductScreen() {
     val (description, setDescription) = remember { mutableStateOf("") }
     val (brand, setBrand) = remember { mutableStateOf("") }
     val (category, setCategory) = remember { mutableStateOf("") }
-    val (comboId, setComboId) = remember { mutableStateOf("") }
-    val (comboPrice, setComboPrice) = remember { mutableStateOf("") }
     val (gender, setGender) = remember { mutableStateOf("") }
-    val (isAvailable, setIsAvailable) = remember { mutableStateOf(false) }
-    val (isOffer, setIsOffer) = remember { mutableStateOf(false) }
-    val (offerPrice, setOfferPrice) = remember { mutableStateOf("") }
     val (price, setPrice) = remember { mutableStateOf("") }
-    val (season, setSeason) = remember { mutableStateOf("") }
-    val (circleOptionFilter, setCircleOptionFilter) = remember { mutableStateOf("") }
+    // Eliminados del formulario: comboId, comboPrice, isOffer, offerPrice, season, circleOptionFilter
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -202,32 +196,11 @@ fun AddProductScreen() {
                     placeholder = { Text("Categoría", color = Color.Gray) }
                 )
                 OutlinedTextField(
-                    value = comboId,
-                    onValueChange = setComboId,
-                    label = { Text("Combo IDs (separados por coma)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Combo IDs", color = Color.Gray) }
-                )
-                OutlinedTextField(
-                    value = comboPrice,
-                    onValueChange = setComboPrice,
-                    label = { Text("Combo Precio") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Combo Precio", color = Color.Gray) }
-                )
-                OutlinedTextField(
                     value = gender,
                     onValueChange = setGender,
                     label = { Text("Género") },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Género", color = Color.Gray) }
-                )
-                OutlinedTextField(
-                    value = offerPrice,
-                    onValueChange = setOfferPrice,
-                    label = { Text("Precio Oferta") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Precio Oferta", color = Color.Gray) }
                 )
                 OutlinedTextField(
                     value = price,
@@ -236,28 +209,7 @@ fun AddProductScreen() {
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Precio", color = Color.Gray) }
                 )
-                OutlinedTextField(
-                    value = season,
-                    onValueChange = setSeason,
-                    label = { Text("Temporada") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Temporada", color = Color.Gray) }
-                )
-                OutlinedTextField(
-                    value = circleOptionFilter,
-                    onValueChange = setCircleOptionFilter,
-                    label = { Text("Filtro Círculo") },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Filtro Círculo", color = Color.Gray) }
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = isAvailable, onCheckedChange = setIsAvailable)
-                    Text("Disponible")
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = isOffer, onCheckedChange = setIsOffer)
-                    Text("En Oferta")
-                }
+                // Eliminados del formulario: comboId, comboPrice, isOffer, offerPrice, season, circleOptionFilter
                 Spacer(modifier = Modifier.size(16.dp))
                 Button(
                     onClick = {
@@ -271,16 +223,16 @@ fun AddProductScreen() {
                                 description = description.ifBlank { null },
                                 brand = brand.ifBlank { null },
                                 category = category.ifBlank { null },
-                                comboId = if (comboId.isNotBlank()) comboId.split(",").map { it.trim() } else null,
-                                comboPrice = comboPrice.toIntOrNull(),
+                                comboId = emptyList(), // Eliminado, enviar vacío
+                                comboPrice = 0, // Eliminado, enviar 0
                                 gender = gender.ifBlank { null },
                                 images = if (uploadedUrls.isNotEmpty()) uploadedUrls else null,
-                                isAvailable = isAvailable,
-                                isOffer = isOffer,
-                                offerPrice = offerPrice.toIntOrNull() ?: 0,
+                                isAvailable = true, // Siempre true
+                                isOffer = false, // Eliminado, enviar false
+                                offerPrice = 0, // Eliminado, enviar 0
                                 price = price.toIntOrNull(),
-                                season = season.ifBlank { null },
-                                circleOptionFilter = circleOptionFilter.ifBlank { null }
+                                season = "", // Eliminado, enviar vacío
+                                circleOptionFilter = "" // Eliminado, enviar vacío
                             )
                             val result = saveProductToFirestore(product)
                             if (result.isSuccess) {
@@ -292,15 +244,8 @@ fun AddProductScreen() {
                                 setDescription("")
                                 setBrand("")
                                 setCategory("")
-                                setComboId("")
-                                setComboPrice("")
                                 setGender("")
-                                setIsAvailable(false)
-                                setIsOffer(false)
-                                setOfferPrice("")
                                 setPrice("")
-                                setSeason("")
-                                setCircleOptionFilter("")
                                 setSelectedUris(emptyList())
                                 setUploadedUrls(emptyList())
                                 setUploadChecks(emptyList())
