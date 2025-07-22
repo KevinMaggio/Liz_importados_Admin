@@ -37,6 +37,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import com.refactoringlife.lizimportadosadmin.core.composablesLipsy.LipsyActionButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
@@ -44,7 +45,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
-import androidx.compose.ui.unit.width
 
 @Composable
 fun HomeDataView(
@@ -53,7 +53,8 @@ fun HomeDataView(
     onNavigateToEditProduct: () -> Unit = {},
     onNavigateToCreateCombo: () -> Unit = {},
     onNavigateToDeleteProduct: () -> Unit = {},
-    onNavigateToVenderProduct: () -> Unit = {}
+    onNavigateToVenderProduct: () -> Unit = {},
+    onNavigateToTestImageProcessing: () -> Unit = {}  // Nuevo parámetro
 ) {
     // Lista de mensajes motivacionales
     val mensajesMotivacionales = listOf(
@@ -284,6 +285,17 @@ fun HomeDataView(
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
                 containerColor = Color(0xFF6D4C41)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            // Cambiar el icono del botón de prueba
+            LipsyActionButton(
+                text = "Probar Procesamiento de Imágenes",
+                icon = Icons.Default.AccountBox,  // Usar el icono de imagen
+                onClick = onNavigateToTestImageProcessing,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFF9C27B0)
             )
         }
     }

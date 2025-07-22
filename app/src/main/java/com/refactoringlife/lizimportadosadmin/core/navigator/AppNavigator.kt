@@ -20,6 +20,7 @@ import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.scr
 import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.EditProductDetailScreen
 import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.DeleteProductScreen
 import com.refactoringlife.lizimportadosadmin.features.editProduct.presenter.screens.VenderProductoScreen
+import com.refactoringlife.lizimportadosadmin.features.home.presenter.screens.TestImageProcessingScreen
 
 @RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalAnimationApi::class)
@@ -106,6 +107,13 @@ fun AppNavHost(
             exitTransition = { fadeOut() }
         ) {
             VenderProductoScreen()
+        }
+        composable(
+            AppRoutes.TEST_IMAGE_PROCESSING,
+            enterTransition = { fadeIn() },
+            exitTransition = { fadeOut() }
+        ) {
+            TestImageProcessingScreen()
         }
     }
 }

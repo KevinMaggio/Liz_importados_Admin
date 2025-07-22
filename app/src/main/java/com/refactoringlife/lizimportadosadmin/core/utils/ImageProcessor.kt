@@ -1,28 +1,54 @@
 package com.refactoringlife.lizimportadosadmin.core.utils
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.*
 import android.net.Uri
 import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import androidx.exifinterface.media.ExifInterface
-import android.graphics.Matrix
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class ImageProcessor {
     
     companion object {
         private const val TAG = "ImageProcessor"
-        private const val WHITE_THRESHOLD = 240 // Umbral para considerar un píxel como "blanco"
         private const val MAX_IMAGE_SIZE = 1024 // Tamaño máximo para procesar
+        
+        // Umbrales más flexibles para la detección de fondo
+        private const val LUMINOSITY_THRESHOLD = 200 // Umbral de luminosidad (0-255)
+        private const val SATURATION_THRESHOLD = 30 // Umbral de saturación (0-255)
+        private const val COLOR_DIFFERENCE_THRESHOLD = 30 // Diferencia máxima entre canales RGB
+    }
+
+    private fun isLikelyBackground(red: Int, green: Int, blue: Int): Boolean {
+        // Calcular luminosidad (promedio simple RGB)
+        val luminosity = (red + green + blue) / 3
+        
+        // Calcular saturación (diferencia entre max y min RGB)
+        val maxRGB = max(max(red, green), blue)
+        val minRGB = min(min(red, green), blue)
+        val saturation = maxRGB - minRGB
+        
+        // Calcular diferencias entre canales
+        val redGreenDiff = abs(red - green)
+        val redBlueDiff = abs(red - blue)
+        val greenBlueDiff = abs(green - blue)
+        val maxDifference = max(max(redGreenDiff, redBlueDiff), greenBlueDiff)
+        
+        // Un píxel es considerado fondo si:
+        // 1. Es suficientemente brillante (alta luminosidad)
+        // 2. Tiene baja saturación (cerca del gris/blanco)
+        // 3. Los canales RGB son similares (indica gris/blanco)
+        return luminosity >= LUMINOSITY_THRESHOLD && 
+               saturation <= SATURATION_THRESHOLD &&
+               maxDifference <= COLOR_DIFFERENCE_THRESHOLD
     }
     
-    /**
-     * Procesa una imagen removiendo el fondo blanco
-     */
     suspend fun removeWhiteBackground(
         context: Context,
         imageUri: Uri
@@ -78,20 +104,13 @@ class ImageProcessor {
             
             for (i in pixels.indices) {
                 val pixel = pixels[i]
-                val red = android.graphics.Color.red(pixel)
-                val green = android.graphics.Color.green(pixel)
-                val blue = android.graphics.Color.blue(pixel)
+                val red = Color.red(pixel)
+                val green = Color.green(pixel)
+                val blue = Color.blue(pixel)
                 
-                // Verificar si el píxel es "blanco" (cerca del blanco)
-                val isWhite = red >= WHITE_THRESHOLD && 
-                             green >= WHITE_THRESHOLD && 
-                             blue >= WHITE_THRESHOLD
-                
-                pixels[i] = if (isWhite) {
-                    // Hacer transparente
-                    android.graphics.Color.TRANSPARENT
+                pixels[i] = if (isLikelyBackground(red, green, blue)) {
+                    Color.TRANSPARENT
                 } else {
-                    // Mantener el color original
                     pixel
                 }
             }

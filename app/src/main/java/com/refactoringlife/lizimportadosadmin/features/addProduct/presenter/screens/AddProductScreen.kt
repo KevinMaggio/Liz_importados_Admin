@@ -306,7 +306,25 @@ suspend fun uploadToFirebaseStorage(uri: Uri?, context: android.content.Context)
 suspend fun saveProductToFirestore(product: ProductRequest): Result<Unit> = withContext(Dispatchers.IO) {
     try {
         val db = Firebase.firestore
-        db.collection("products").document(product.id).set(product).await()
+        // Convertir el producto a Map para asegurar que los campos se guarden correctamente
+        val productMap = mapOf(
+            "id" to product.id,
+            "name" to product.name,
+            "description" to product.description,
+            "brand" to product.brand,
+            "category" to product.category,
+            "combo_id" to (product.comboId ?: emptyList()),
+            "combo_price" to (product.comboPrice ?: 0),
+            "gender" to product.gender,
+            "images" to product.images,
+            "is_available" to true, // Forzar a true explícitamente
+            "is_offer" to false,
+            "offer_price" to 0,
+            "price" to product.price,
+            "season" to "",
+            "circle_option_filter" to ""
+        )
+        db.collection("products").document(product.id).set(productMap).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
