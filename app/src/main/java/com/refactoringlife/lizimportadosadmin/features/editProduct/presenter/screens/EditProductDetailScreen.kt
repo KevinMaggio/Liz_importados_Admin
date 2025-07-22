@@ -17,6 +17,10 @@ import com.google.firebase.ktx.Firebase
 import com.refactoringlife.lizimportadosadmin.core.dto.request.ProductRequest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 
 @Composable
 fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
@@ -42,6 +46,60 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
     var circleOptionFilter by remember { mutableStateOf("") }
     var images by remember { mutableStateOf<List<String>>(emptyList()) }
     var success by remember { mutableStateOf<String?>(null) }
+    var isSaving by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogMessage by remember { mutableStateOf<String?>(null) }
+    var dialogIsError by remember { mutableStateOf(false) }
+
+    // Modal de confirmación/error
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!dialogIsError) {
+                    onBack()
+                }
+                showDialog = false
+            },
+            title = { Text(if (dialogIsError) "Error" else "¡Éxito!") },
+            text = { Text(dialogMessage ?: "") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (!dialogIsError) {
+                            onBack()
+                        }
+                        showDialog = false
+                    }
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            containerColor = if (dialogIsError) Color(0xFFFFEBEE) else Color(0xFFE8F5E9)
+        )
+    }
+
+    // Loading overlay
+    if (isSaving) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Guardando cambios...",
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
 
     LaunchedEffect(productId) {
         loading = true
@@ -131,42 +189,47 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
         }
         Text("Anterior: ${original?.isOffer ?: "-"}", fontSize = 12.sp, color = Color.Gray)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            coroutineScope.launch {
-                val cambios = mutableMapOf<String, Any>()
-                if (name != original?.name) cambios["name"] = name
-                if (description != original?.description) cambios["description"] = description
-                if (brand != original?.brand) cambios["brand"] = brand
-                if (category != original?.category) cambios["category"] = category
-                if (comboId != (original?.comboId?.joinToString(",") ?: "")) cambios["combo_id"] = comboId.split(",").map { it.trim() }
-                if (comboPrice != (original?.comboPrice?.toString() ?: "")) cambios["combo_price"] = comboPrice.toIntOrNull() ?: 0
-                if (gender != original?.gender) cambios["gender"] = gender
-                if (isAvailable != (original?.isAvailable == true)) cambios["is_available"] = isAvailable
-                if (isOffer != (original?.isOffer == true)) cambios["is_offer"] = isOffer
-                if (offerPrice != (original?.offerPrice?.toString() ?: "")) cambios["offer_price"] = offerPrice.toIntOrNull() ?: 0
-                if (price != (original?.price?.toString() ?: "")) cambios["price"] = price.toIntOrNull() ?: 0
-                if (season != original?.season) cambios["season"] = season
-                if (circleOptionFilter != original?.circleOptionFilter) cambios["circle_option_filter"] = circleOptionFilter
-                if (cambios.isNotEmpty()) {
-                    try {
-                        val db = Firebase.firestore
-                        db.collection("products").document(productId).update(cambios).await()
-                        success = "Producto actualizado"
-                    } catch (e: Exception) {
-                        error = e.message
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    isSaving = true
+                    val cambios = mutableMapOf<String, Any>()
+                    if (name != original?.name) cambios["name"] = name
+                    if (description != original?.description) cambios["description"] = description
+                    if (brand != original?.brand) cambios["brand"] = brand
+                    if (category != original?.category) cambios["category"] = category
+                    if (comboId != (original?.comboId?.joinToString(",") ?: "")) cambios["combo_id"] = comboId.split(",").map { it.trim() }
+                    if (comboPrice != (original?.comboPrice?.toString() ?: "")) cambios["combo_price"] = comboPrice.toIntOrNull() ?: 0
+                    if (gender != original?.gender) cambios["gender"] = gender
+                    if (isAvailable != (original?.isAvailable == true)) cambios["is_available"] = isAvailable
+                    if (isOffer != (original?.isOffer == true)) cambios["is_offer"] = isOffer
+                    if (offerPrice != (original?.offerPrice?.toString() ?: "")) cambios["offer_price"] = offerPrice.toIntOrNull() ?: 0
+                    if (price != (original?.price?.toString() ?: "")) cambios["price"] = price.toIntOrNull() ?: 0
+                    if (season != original?.season) cambios["season"] = season
+                    if (circleOptionFilter != original?.circleOptionFilter) cambios["circle_option_filter"] = circleOptionFilter
+                    if (cambios.isNotEmpty()) {
+                        try {
+                            val db = Firebase.firestore
+                            db.collection("products").document(productId).update(cambios).await()
+                            dialogMessage = "¡Producto actualizado exitosamente!"
+                            dialogIsError = false
+                        } catch (e: Exception) {
+                            dialogMessage = "Error al actualizar: ${e.message}"
+                            dialogIsError = true
+                        }
+                    } else {
+                        dialogMessage = "No hay cambios para guardar"
+                        dialogIsError = false
                     }
-                } else {
-                    success = "No hay cambios para guardar"
+                    isSaving = false
+                    showDialog = true
                 }
-            }
-        }) { Text("Guardar Cambios") }
+            },
+            enabled = !isSaving
+        ) {
+            Text("Guardar Cambios")
+        }
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onBack) { Text("Volver") }
-        if (error != null) {
-            Text(text = "Error: $error", modifier = Modifier.padding(top = 16.dp))
-        }
-        success?.let {
-            Text(text = it, modifier = Modifier.padding(top = 16.dp))
-        }
     }
 } 
