@@ -41,11 +41,11 @@ object FireStoreStats {
 
     // Obtener métricas de productos (activos, vendidos)
     suspend fun getMetricasProductos(): Pair<Int, Int> {
-        val snapshot = db.collection("productos").get().await()
+        val snapshot = db.collection("products").get().await()
         var activos = 0
         var vendidos = 0
         for (doc in snapshot.documents) {
-            if (doc.getBoolean("activo") == true) activos++
+            if (doc.getBoolean("is_available") == true) activos++
             vendidos += doc.getLong("vendidos")?.toInt() ?: 0
         }
         return activos to vendidos

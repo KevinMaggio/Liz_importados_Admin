@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,6 +22,8 @@ import kotlinx.coroutines.launch
 import com.refactoringlife.lizimportadosadmin.core.network.fireStore.FireStoreStats
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,6 +33,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.refactoringlife.lizimportadosadmin.features.home.composables.VentasBarChart
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.refactoringlife.lizimportadosadmin.core.composablesLipsy.LipsyActionButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.ui.unit.width
 
 @Composable
 fun HomeDataView(
@@ -54,7 +66,10 @@ fun HomeDataView(
         "¡Tu dedicación mueve este negocio!",
         "No te detengas, los grandes logros requieren tiempo.",
         "¡Eres el motor de Liz Importados!",
-        "Hoy puedes superar tus propias metas."
+        "Hoy puedes superar tus propias metas.",
+        "Siempre recorda que no estas sola.",
+        "Hay dias dificiles, pero vos podes con todo!",
+        "Un dia nuevo, es una nueva oportunidad de comenzar!, vamos a romperla!!!",
     )
     // Seleccionar mensaje aleatorio
     val mensajeAleatorio = remember { mensajesMotivacionales.random() }
@@ -85,6 +100,8 @@ fun HomeDataView(
         }
     }
 
+    val scrollState = rememberScrollState()
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -92,16 +109,31 @@ fun HomeDataView(
             .padding(20.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Mensaje motivacional
-            Text(
-                text = mensajeAleatorio,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
+            // Mensaje motivacional destacado
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 24.dp)
-            )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFFFC107),
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = mensajeAleatorio,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF22223B),
+                    letterSpacing = 1.2.sp
+                )
+            }
             if (loading) {
                 CircularProgressIndicator()
             } else if (error != null) {
@@ -207,51 +239,52 @@ fun HomeDataView(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
-            // Botones de acción (mantengo los existentes)
-            Button(
+            // Botones de acción modernos
+            LipsyActionButton(
+                text = "Agregar Producto",
+                icon = Icons.Default.Add,
                 onClick = onNavigateToAddProduct,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(height = 56.dp, width = 200.dp)
-            ) {
-                Text("Agregar Producto")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFF4CAF50)
+            )
+            LipsyActionButton(
+                text = "Editar Producto",
+                icon = Icons.Default.Edit,
                 onClick = onNavigateToEditProduct,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(height = 56.dp, width = 200.dp)
-            ) {
-                Text("Editar Producto")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFF2196F3)
+            )
+            LipsyActionButton(
+                text = "Crear Combo de Productos",
+                icon = Icons.Default.ShoppingCart,
                 onClick = onNavigateToCreateCombo,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(height = 56.dp, width = 200.dp)
-            ) {
-                Text("Crear Combo de Productos")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFFFF9800)
+            )
+            LipsyActionButton(
+                text = "Eliminar Producto",
+                icon = Icons.Default.Delete,
                 onClick = onNavigateToDeleteProduct,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(height = 56.dp, width = 200.dp)
-            ) {
-                Text("Eliminar Producto")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFFF44336)
+            )
+            LipsyActionButton(
+                text = "Vender Producto",
+                icon = Icons.Default.CheckCircle,
                 onClick = onNavigateToVenderProduct,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(height = 56.dp, width = 200.dp)
-            ) {
-                Text("Vender Producto")
-            }
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFF6D4C41)
+            )
         }
     }
 }
