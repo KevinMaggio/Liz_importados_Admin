@@ -287,16 +287,7 @@ fun HomeDataView(
                 containerColor = Color(0xFF6D4C41)
             )
             Spacer(modifier = Modifier.height(24.dp))
-            // Cambiar el icono del botón de prueba
-            LipsyActionButton(
-                text = "Probar Procesamiento de Imágenes",
-                icon = Icons.Default.AccountBox,  // Usar el icono de imagen
-                onClick = onNavigateToTestImageProcessing,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                containerColor = Color(0xFF9C27B0)
-            )
+
         }
     }
 }

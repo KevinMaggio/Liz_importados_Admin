@@ -27,9 +27,6 @@ fun HomeScreen(
         },
         onNavigateToVenderProduct = {
             navController?.navigate("vender_producto")
-        },
-        onNavigateToTestImageProcessing = {
-            navController?.navigate(AppRoutes.TEST_IMAGE_PROCESSING)
         }
     )
 }

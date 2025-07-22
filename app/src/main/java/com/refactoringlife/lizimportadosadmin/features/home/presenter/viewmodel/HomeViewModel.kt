@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.refactoringlife.lizimportadosadmin.core.utils.ImageProcessor
+import com.refactoringlife.lizimportadosadmin.core.utils.ImageOptimizer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,37 +37,9 @@ class HomeViewModel : ViewModel() {
     /**
      * Procesa las imágenes seleccionadas
      */
-    fun processImages(context: Context, imageUris: List<Uri>) {
-        Log.d(TAG, "🔄 Procesando ${imageUris.size} imágenes")
-        viewModelScope.launch {
-            try {
-                _uiState.value = HomeUiState.ProcessingImages(imageUris.size)
-                
-                // Procesar imágenes usando ImageProcessor
-                val results = imageProcessor.processMultipleImages(context, imageUris)
-                
-                // Filtrar solo las imágenes exitosas
-                val successfulUris = results.mapNotNull { result ->
-                    result.getOrNull()
-                }
-                
-                // Actualizar la lista de imágenes procesadas
-                _processedImages.value = successfulUris
-                
-                val successfulCount = successfulUris.size
-                val errorCount = results.size - successfulCount
-                
-                if (errorCount > 0) {
-                    Log.w(TAG, "⚠️ $errorCount imágenes fallaron al procesar")
-                }
-                
-                Log.d(TAG, "✅ Procesamiento completado: $successfulCount exitosas, $errorCount fallidas")
-                _uiState.value = HomeUiState.ProcessingComplete(successfulCount)
-                
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Error procesando imágenes: ${e.message}")
-                _uiState.value = HomeUiState.Error("Error procesando imágenes: ${e.message}")
-            }
+    suspend fun processImages(context: Context, imageUris: List<Uri>): List<Uri> {
+        return imageUris.mapNotNull { uri ->
+            imageProcessor.processImage(context, uri).getOrNull()?.uri
         }
     }
     
