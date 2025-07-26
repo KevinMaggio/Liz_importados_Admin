@@ -6,17 +6,20 @@ plugins {
 }
 
 android {
-    namespace = "com.refactoringlife.lizimportadosadmin"
+    namespace = "com.refactoringlife.lizimportadosadminv2"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.refactoringlife.lizimportadosadmin"
-        minSdk = 24
+        applicationId = "com.refactoringlife.lizimportadosadminv2"
+        minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
 
     buildTypes {

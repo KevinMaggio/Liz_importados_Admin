@@ -1,41 +1,41 @@
 {
   "project_info": {
-    "project_number": "339668798043",
-    "project_id": "lizimportados-98786",
-    "storage_bucket": "lizimportados-98786.firebasestorage.app"
+    "project_number": "58683493663",
+    "project_id": "liz-importados",
+    "storage_bucket": "liz-importados.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:339668798043:android:477d9045ace957c2b94d7e",
+        "mobilesdk_app_id": "1:58683493663:android:b7a027633d2e5f21acf42a",
         "android_client_info": {
-          "package_name": "com.refactoringlife.lizimportados"
+          "package_name": "com.refactoringlife.lizimportadosadminv2"
         }
       },
       "oauth_client": [
         {
-          "client_id": "339668798043-9ieqgivh2bptp7ffq5gkq8m8jm8bh4ig.apps.googleusercontent.com",
+          "client_id": "58683493663-uspjbofbaenlsanpvvho629bpn3rvdeg.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.refactoringlife.lizimportados",
+            "package_name": "com.refactoringlife.lizimportadosadminv2",
             "certificate_hash": "f1ae4ff64330fa7bc1da60704606322c481c5e43"
           }
         },
         {
-          "client_id": "339668798043-jmmgt28b4u9e51qskpa0cooo2kq2cjrv.apps.googleusercontent.com",
+          "client_id": "58683493663-c1216nckpml0m9j5ce1in2o1ggrbd5fc.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCmpZ8zOqYnBE-FyPNy5_NpAl2KSFSzUu8"
+          "current_key": "AIzaSyC5xUMaYqdTjG_BWhaiIC-6SRZ8k-HrJHQ"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "339668798043-jmmgt28b4u9e51qskpa0cooo2kq2cjrv.apps.googleusercontent.com",
+              "client_id": "58683493663-c1216nckpml0m9j5ce1in2o1ggrbd5fc.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
@@ -44,35 +44,35 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:339668798043:android:8a4559f3101b6879b94d7e",
+        "mobilesdk_app_id": "1:58683493663:android:a305422cc6e31559acf42a",
         "android_client_info": {
-          "package_name": "com.refactoringlife.lizimportadosadmin"
+          "package_name": "com.refactoringlife.lizimportadosv2"
         }
       },
       "oauth_client": [
         {
-          "client_id": "339668798043-45adm3532q1b1ukvg2lqgkke5p9ll73l.apps.googleusercontent.com",
+          "client_id": "58683493663-sdbs70viafql7pc5nfl6d023aq2d1ae1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.refactoringlife.lizimportadosadmin",
+            "package_name": "com.refactoringlife.lizimportadosv2",
             "certificate_hash": "f1ae4ff64330fa7bc1da60704606322c481c5e43"
           }
         },
         {
-          "client_id": "339668798043-jmmgt28b4u9e51qskpa0cooo2kq2cjrv.apps.googleusercontent.com",
+          "client_id": "58683493663-c1216nckpml0m9j5ce1in2o1ggrbd5fc.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCmpZ8zOqYnBE-FyPNy5_NpAl2KSFSzUu8"
+          "current_key": "AIzaSyC5xUMaYqdTjG_BWhaiIC-6SRZ8k-HrJHQ"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "339668798043-jmmgt28b4u9e51qskpa0cooo2kq2cjrv.apps.googleusercontent.com",
+              "client_id": "58683493663-c1216nckpml0m9j5ce1in2o1ggrbd5fc.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
