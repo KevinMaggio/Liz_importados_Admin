@@ -40,6 +40,9 @@ import com.refactoringlife.lizimportadosadminv2.core.composablesLipsy.LipsyDropd
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
@@ -55,6 +58,10 @@ fun AddProductScreen() {
     val (error, setError) = remember { mutableStateOf<String?>(null) }
     val (success, setSuccess) = remember { mutableStateOf<String?>(null) }
     val (showSuccess, setShowSuccess) = remember { mutableStateOf(false) }
+
+    // Verificar autenticación
+    val auth = Firebase.auth
+    val currentUser = auth.currentUser
 
     // Campos del formulario
     val (name, setName) = remember { mutableStateOf("") }
@@ -73,6 +80,14 @@ fun AddProductScreen() {
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
         if (uris.isNotEmpty()) {
+            // Verificar autenticación antes de procesar
+            if (currentUser == null) {
+                Log.e("AddProductScreen", "❌ Usuario no autenticado")
+                setError("Debes iniciar sesión para subir imágenes")
+                return@rememberLauncherForActivityResult
+            }
+            
+            Log.d("AddProductScreen", "✅ Usuario autenticado: ${currentUser.email}")
             setProcessing(true)
             setSelectedUris(uris)
             setUploadChecks(List(uris.size) { false })
@@ -81,21 +96,36 @@ fun AddProductScreen() {
                 val urls = mutableListOf<String>()
                 val checks = mutableListOf<Boolean>()
                 for ((index, uri) in uris.withIndex()) {
-                    val processor = ImageProcessor()
-                    val result = processor.processImage(context, uri)
-                    if (result.isSuccess) {
-                        val optimizedResult = result.getOrNull()!!
-                        imageSizes[uri] = optimizedResult.sizeKB // Guardar tamaño
-                        val imageUrl = uploadImageToStorage(context, optimizedResult.uri)
-                        if (imageUrl != null) {
-                            urls.add(imageUrl)
-                            checks.add(true)
+                    try {
+                        Log.d("AddProductScreen", "🖼️ Procesando imagen ${index + 1}/${uris.size}: $uri")
+                        
+                        val processor = ImageProcessor()
+                        val result = processor.processImage(context, uri)
+                        
+                        if (result.isSuccess) {
+                            val optimizedResult = result.getOrNull()!!
+                            imageSizes[uri] = optimizedResult.sizeKB
+                            Log.d("AddProductScreen", "✅ Imagen optimizada: ${optimizedResult.sizeKB} KB")
+                            
+                            val imageUrl = uploadImageToStorage(context, optimizedResult.uri)
+                            if (imageUrl != null) {
+                                urls.add(imageUrl)
+                                checks.add(true)
+                                Log.d("AddProductScreen", "✅ Imagen subida: $imageUrl")
+                            } else {
+                                checks.add(false)
+                                Log.e("AddProductScreen", "❌ Error subiendo imagen ${index + 1}")
+                            }
                         } else {
                             checks.add(false)
+                            Log.e("AddProductScreen", "❌ Error procesando imagen ${index + 1}: ${result.exceptionOrNull()?.message}")
                         }
-                    } else {
+                    } catch (e: Exception) {
                         checks.add(false)
+                        Log.e("AddProductScreen", "❌ Error inesperado procesando imagen ${index + 1}: ${e.message}")
+                        e.printStackTrace()
                     }
+                    
                     setUploadChecks(checks.toList())
                     setUploadedUrls(urls.toList())
                 }
@@ -137,9 +167,37 @@ fun AddProductScreen() {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
                 )
-                Button(onClick = { imagePickerLauncher.launch("image/*") }, enabled = !processing) {
+                
+                // Mostrar estado de autenticación
+                if (currentUser != null) {
+                    Text(
+                        text = "✅ Conectado como: ${currentUser.email}",
+                        color = Color.Green,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                } else {
+                    Text(
+                        text = "❌ No estás conectado",
+                        color = Color.Red,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                
+                Button(
+                    onClick = { imagePickerLauncher.launch("image/*") }, 
+                    enabled = !processing && currentUser != null
+                ) {
                     Text("Seleccionar Imágenes")
                 }
+                
+                if (currentUser == null) {
+                    Text(
+                        text = "Debes iniciar sesión para subir imágenes",
+                        color = Color.Red,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                
                 if (processing) {
                     CircularProgressIndicator(modifier = Modifier.padding(24.dp))
                 }
