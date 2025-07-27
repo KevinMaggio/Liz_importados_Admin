@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.composablesLipsy
+package com.refactoringlife.lizimportadosadminv2.core.composablesLipsy
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -12,7 +12,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 
 @Composable
-fun LottieAnimationButterfly(modifier: Modifier = Modifier) {
+fun LipsyButterfly(modifier: Modifier = Modifier) {
     val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lootie_butterfly.json"))
     val progress by animateLottieCompositionAsState(composition,
         iterations = LottieConstants.IterateForever)

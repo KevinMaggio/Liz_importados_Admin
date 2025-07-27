@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.auth
+package com.refactoringlife.lizimportadosadminv2.core.auth
 
 import android.content.Context
 import android.content.Intent

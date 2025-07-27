@@ -29,15 +29,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.refactoringlife.lizimportadosadminv2.features.login.presenter.viewmodel.LoginUiState
 import com.refactoringlife.lizimportadosadminv2.features.login.presenter.viewmodel.LoginViewModel
 import androidx.compose.ui.graphics.Color
-import com.refactoringlife.lizimportados.core.composablesLipsy.LottieAnimationButterfly
+import com.refactoringlife.lizimportadosadminv2.core.composablesLipsy.LipsyButterfly
 import com.refactoringlife.lizimportadosadminv2.R
 import com.refactoringlife.lizimportadosadminv2.ui.theme.ColorWhiteLipsy
 
 @Composable
 fun LoginScreen(
-    onGoogleClick: () -> Unit = {},
+    viewModel: LoginViewModel,
     onGoogleSignInClick: (Intent) -> Unit = {},
-    viewModel: LoginViewModel
+    onNavigateToHome: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -51,7 +51,8 @@ fun LoginScreen(
     LaunchedEffect(uiState) {
         when (uiState) {
             is LoginUiState.Success -> {
-                onGoogleClick()
+                // Navegar a Home después del login exitoso
+                onNavigateToHome()
                 viewModel.resetState()
             }
             is LoginUiState.Error -> {
@@ -112,7 +113,7 @@ fun LoginScreen(
                 }
         )
 
-        LottieAnimationButterfly(modifier = Modifier.align(Alignment.BottomCenter)
+        LipsyButterfly(modifier = Modifier.align(Alignment.BottomCenter)
             .padding(top = 70.dp, start = 50.dp, bottom = 140.dp))
         
         if (uiState is LoginUiState.Loading) {
@@ -127,15 +128,15 @@ fun LoginScreen(
         }
     }
     
-    // Dialog error
+    // Dialog de error
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false },
-            title = { Text("Error de Autenticación") },
+            title = { Text("Error") },
             text = { Text(errorMessage) },
             confirmButton = {
                 TextButton(onClick = { showErrorDialog = false }) {
-                    Text("Aceptar")
+                    Text("OK")
                 }
             }
         )

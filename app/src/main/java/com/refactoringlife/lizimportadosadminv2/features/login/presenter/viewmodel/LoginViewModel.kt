@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.refactoringlife.lizimportados.core.auth.AuthResult
-import com.refactoringlife.lizimportados.core.auth.GoogleAuthManager
+import com.refactoringlife.lizimportadosadminv2.core.auth.AuthResult
+import com.refactoringlife.lizimportadosadminv2.core.auth.GoogleAuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -108,6 +108,6 @@ class LoginViewModel : ViewModel() {
 sealed class LoginUiState {
     data object Idle : LoginUiState()
     data object Loading : LoginUiState()
-    data class Success(val user: com.refactoringlife.lizimportados.core.auth.AuthUser) : LoginUiState()
+    data class Success(val user: com.refactoringlife.lizimportadosadminv2.core.auth.AuthUser) : LoginUiState()
     data class Error(val message: String) : LoginUiState()
 } 

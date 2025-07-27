@@ -20,92 +20,85 @@ import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.s
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.EditProductDetailScreen
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.DeleteProductScreen
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.VenderProductoScreen
+import com.refactoringlife.lizimportadosadminv2.features.config.presenter.screens.ConfigAppScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
-@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    onGoogleSignInClick: (Intent) -> Unit = {},
-    viewModel: LoginViewModel
+    viewModel: LoginViewModel,
+    onGoogleSignInClick: (Intent) -> Unit
 ) {
     AnimatedNavHost(
         navController = navController,
         startDestination = AppRoutes.LOGIN,
         modifier = modifier
     ) {
-        composable(
-            AppRoutes.LOGIN,
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        composable(AppRoutes.LOGIN) {
             LoginScreen(
-                onGoogleClick = {
+                viewModel = viewModel,
+                onGoogleSignInClick = onGoogleSignInClick,
+                onNavigateToHome = {
                     navController.navigate(AppRoutes.HOME) {
                         popUpTo(AppRoutes.LOGIN) { inclusive = true }
-                        launchSingleTop = true
                     }
-                },
-                onGoogleSignInClick = onGoogleSignInClick,
-                viewModel = viewModel
+                }
             )
         }
-
-        composable(
-            AppRoutes.HOME,
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
-            HomeScreen(navController = navController)
+        
+        composable(AppRoutes.HOME) {
+            HomeScreen(
+                onNavigateToAddProduct = { navController.navigate(AppRoutes.ADD_PRODUCT) },
+                onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
+                onNavigateToSelectProductForEdit = { navController.navigate(AppRoutes.SELECT_PRODUCT_FOR_EDIT) },
+                onNavigateToDeleteProduct = { navController.navigate(AppRoutes.DELETE_PRODUCT) },
+                onNavigateToVenderProducto = { navController.navigate(AppRoutes.VENDER_PRODUCTO) },
+                onNavigateToConfigApp = { navController.navigate(AppRoutes.CONFIG_APP) }
+            )
         }
-
-        composable(
-            "add_product",
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        
+        composable(AppRoutes.ADD_PRODUCT) {
             AddProductScreen()
         }
-
-        composable(
-            "create_combo",
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        
+        composable(AppRoutes.CREATE_COMBO) {
             CreateComboScreen()
         }
-
-        composable(
-            "edit_product_select",
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
-            SelectProductForEditScreen(onProductSelected = { productId ->
-                navController.navigate("edit_product_detail/$productId")
-            })
+        
+        composable(AppRoutes.SELECT_PRODUCT_FOR_EDIT) {
+            SelectProductForEditScreen(
+                onProductSelected = { productId ->
+                    navController.navigate("${AppRoutes.EDIT_PRODUCT_DETAIL}/$productId")
+                }
+            )
         }
+        
         composable(
-            "edit_product_detail/{productId}",
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
+            route = "${AppRoutes.EDIT_PRODUCT_DETAIL}/{productId}",
+            arguments = listOf(navArgument("productId") { type = NavType.StringType })
         ) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId") ?: ""
-            EditProductDetailScreen(productId = productId, onBack = { navController.popBackStack() })
+            EditProductDetailScreen(
+                productId = productId,
+                onBack = { navController.popBackStack() }
+            )
         }
-        composable(
-            "delete_product",
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        
+        composable(AppRoutes.DELETE_PRODUCT) {
             DeleteProductScreen()
         }
-        composable(
-            "vender_producto",
-            enterTransition = { fadeIn() },
-            exitTransition = { fadeOut() }
-        ) {
+        
+        composable(AppRoutes.VENDER_PRODUCTO) {
             VenderProductoScreen()
+        }
+        
+        composable(AppRoutes.CONFIG_APP) {
+            ConfigAppScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

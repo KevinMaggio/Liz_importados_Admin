@@ -44,17 +44,20 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.lazy.LazyColumn
 
 @Composable
 fun HomeDataView(
     modifier: Modifier = Modifier,
     onNavigateToAddProduct: () -> Unit = {},
-    onNavigateToEditProduct: () -> Unit = {},
+    onNavigateToSelectProductForEdit: () -> Unit = {},
     onNavigateToCreateCombo: () -> Unit = {},
     onNavigateToDeleteProduct: () -> Unit = {},
-    onNavigateToVenderProduct: () -> Unit = {},
-    onNavigateToTestImageProcessing: () -> Unit = {}  // Nuevo parámetro
+    onNavigateToVenderProducto: () -> Unit = {},
+    onNavigateToTestImageProcessing: () -> Unit = {},
+    onNavigateToConfigApp: () -> Unit = {}
 ) {
     // Lista de mensajes motivacionales
     val mensajesMotivacionales = listOf(
@@ -253,7 +256,7 @@ fun HomeDataView(
             LipsyActionButton(
                 text = "Editar Producto",
                 icon = Icons.Default.Edit,
-                onClick = onNavigateToEditProduct,
+                onClick = onNavigateToSelectProductForEdit,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
@@ -280,13 +283,23 @@ fun HomeDataView(
             LipsyActionButton(
                 text = "Vender Producto",
                 icon = Icons.Default.CheckCircle,
-                onClick = onNavigateToVenderProduct,
+                onClick = onNavigateToVenderProducto,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
                 containerColor = Color(0xFF6D4C41)
             )
             Spacer(modifier = Modifier.height(24.dp))
+
+            // Botón de Configuración
+            LipsyActionButton(
+                text = "Configurar Secciones de la App",
+                icon = Icons.Default.Settings,
+                onClick = onNavigateToConfigApp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
 
         }
     }
