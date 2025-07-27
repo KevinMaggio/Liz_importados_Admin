@@ -60,6 +60,7 @@ fun AddProductScreen() {
     val (name, setName) = remember { mutableStateOf("") }
     val (description, setDescription) = remember { mutableStateOf("") }
     val (brand, setBrand) = remember { mutableStateOf("") }
+    val (size, setSize) = remember { mutableStateOf("") }
     val (category, setCategory) = remember { mutableStateOf("") }
     val (gender, setGender) = remember { mutableStateOf("") }
     val (price, setPrice) = remember { mutableStateOf("") }
@@ -113,6 +114,7 @@ fun AddProductScreen() {
             name = name,
             description = description,
             brand = brand,
+            size = size,
             category = ProductConstants.getValueOrEmpty(selectedCategory),
             gender = ProductConstants.getValueOrEmpty(selectedGender),
             price = price.toIntOrNull(),
@@ -200,6 +202,20 @@ fun AddProductScreen() {
                     )
                 )
 
+                // Talla - Una línea
+                OutlinedTextField(
+                    value = size,
+                    onValueChange = setSize,
+                    label = { Text("Talla") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Next
+                    )
+                )
+
                 // Dropdowns
                 LipsyDropdown(
                     label = "Categoría",
@@ -258,6 +274,7 @@ fun AddProductScreen() {
                                 setName("")
                                 setDescription("")
                                 setBrand("")
+                                setSize("")
                                 setCategory("")
                                 setGender("")
                                 setPrice("")
@@ -288,6 +305,7 @@ suspend fun saveProductToFirestore(product: ProductRequest): Result<Unit> = with
             "name" to product.name,
             "description" to product.description,
             "brand" to product.brand,
+            "size" to product.size,
             "category" to product.category,
             "combo_id" to (product.comboId ?: emptyList()),
             "combo_price" to (product.comboPrice ?: 0),

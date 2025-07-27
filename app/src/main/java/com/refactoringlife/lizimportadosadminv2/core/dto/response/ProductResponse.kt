@@ -1,4 +1,4 @@
-package com.refactoringlife.lizimportados.core.dto.response
+package com.refactoringlife.lizimportadosadminv2.core.dto.response
 
 import kotlinx.serialization.SerialName
 
@@ -9,6 +9,8 @@ data class ProductResponse(
     val category: String?,
     @SerialName("combo_ids")
     val comboIds: List<String>?,
+    @SerialName("size")
+    val size: String? = "",
     @SerialName("combo_price")
     val comboPrice: Int?,
     @SerialName("gender")

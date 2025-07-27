@@ -11,6 +11,8 @@ data class ProductRequest (
     val description: String? = null,
     @SerialName("brand")
     val brand: String? = null,
+    @SerialName("size")
+    val size: String? = "",
     @SerialName("category")
     val category: String? = null,
     @SerialName("combo_id")
