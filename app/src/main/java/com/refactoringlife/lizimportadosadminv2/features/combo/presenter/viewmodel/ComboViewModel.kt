@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 // Modelo específico para productos en combos
 data class ComboProduct(
     val id: String,
-    val title: String?,
+    val name: String?, // Cambiar de title a name
     val price: Int?,
     val images: List<String>?
 )

@@ -152,10 +152,15 @@ fun AddProductScreen() {
             description = description,
             brand = brand,
             size = size,
-            category = ProductConstants.getValueOrEmpty(selectedCategory),
-            gender = ProductConstants.getValueOrEmpty(selectedGender),
-            price = price.toIntOrNull(),
-            images = uploadedUrls
+            category = ProductConstants.getValueOrEmpty(category),
+            comboIds = emptyList(), // Inicialmente sin combos
+            comboPrice = null, // No usar comboPrice
+            gender = ProductConstants.getValueOrEmpty(gender),
+            images = uploadedUrls,
+            isAvailable = true,
+            isOffer = false,
+            offerPrice = 0,
+            price = price.toIntOrNull() ?: 0
         )
     }
 
@@ -372,17 +377,13 @@ suspend fun saveProductToFirestore(product: ProductRequest): Result<Unit> = with
             "brand" to product.brand,
             "size" to product.size,
             "category" to product.category,
-            "combo_id" to (product.comboId ?: emptyList()),
-            "combo_price" to (product.comboPrice ?: 0),
+            "combo_ids" to (product.comboIds ?: emptyList()),
             "gender" to product.gender,
             "images" to product.images,
-            "is_available" to true, // Forzar a true explícitamente
+            "is_available" to true,
             "is_offer" to false,
             "offer_price" to 0,
-            "price" to product.price,
-            "season" to "",
-            "circle_option_filter" to "",
-            "combo_ids" to emptyList<String>() // Nuevo campo para combos
+            "price" to product.price
         )
         db.collection("products").document(product.id).set(productMap).await()
         Result.success(Unit)

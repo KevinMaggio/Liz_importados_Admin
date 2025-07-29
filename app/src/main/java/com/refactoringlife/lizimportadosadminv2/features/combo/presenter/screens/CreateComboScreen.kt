@@ -45,7 +45,7 @@ fun CreateComboScreen(
     
     // Generar ID automático del combo
     LaunchedEffect(Unit) {
-        comboId = "COMBO_${System.currentTimeMillis()}"
+        comboId = System.currentTimeMillis().toString()
     }
     
     // Calcular precio total de forma segura
@@ -95,7 +95,7 @@ fun CreateComboScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = if (product1 != null) "Producto 1: ${product1?.title ?: "Sin nombre"}" else "Producto 1",
+                    text = if (product1 != null) "Producto 1: ${product1?.name ?: "Sin nombre"}" else "Producto 1",
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -109,7 +109,7 @@ fun CreateComboScreen(
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = product1?.title ?: "Sin nombre", fontWeight = FontWeight.Bold)
+                            Text(text = product1?.name ?: "Sin nombre", fontWeight = FontWeight.Bold)
                             Text(text = "Precio: $${product1?.price ?: 0}")
                         }
                         IconButton(onClick = { viewModel.clearProduct1() }) {
@@ -137,7 +137,7 @@ fun CreateComboScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = if (product2 != null) "Producto 2: ${product2?.title ?: "Sin nombre"}" else "Producto 2",
+                    text = if (product2 != null) "Producto 2: ${product2?.name ?: "Sin nombre"}" else "Producto 2",
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -151,7 +151,7 @@ fun CreateComboScreen(
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = product2?.title ?: "Sin nombre", fontWeight = FontWeight.Bold)
+                            Text(text = product2?.name ?: "Sin nombre", fontWeight = FontWeight.Bold)
                             Text(text = "Precio: $${product2?.price ?: 0}")
                         }
                         IconButton(onClick = { viewModel.clearProduct2() }) {
@@ -242,8 +242,7 @@ fun CreateComboScreen(
                 coroutineScope.launch {
                     try {
                         val combo = ComboRequest(
-                            id = UUID.randomUUID().toString(),
-                            comboId = comboId,
+                            comboId = comboId.toIntOrNull() ?: System.currentTimeMillis().toInt(),
                             oldPrice = oldPrice,
                             newPrice = newPrice.toInt(),
                             product1Id = product1?.id ?: "",
@@ -252,21 +251,21 @@ fun CreateComboScreen(
                         
                         // Guardar combo
                         val db = Firebase.firestore
-                        db.collection("combos").document(combo.id).set(combo).await()
+                        db.collection("combos").document(combo.comboId.toString()).set(combo).await()
                         
                         // Actualizar productos con comboId
                         product1?.id?.let { product1Id ->
                             val product1Ref = db.collection("products").document(product1Id)
                             val product1Doc = product1Ref.get().await()
                             val currentComboIds = product1Doc.get("combo_ids") as? List<String> ?: emptyList()
-                            product1Ref.update("combo_ids", currentComboIds + combo.comboId).await()
+                            product1Ref.update("combo_ids", currentComboIds + combo.comboId.toString()).await()
                         }
                         
                         product2?.id?.let { product2Id ->
                             val product2Ref = db.collection("products").document(product2Id)
                             val product2Doc = product2Ref.get().await()
                             val currentComboIds2 = product2Doc.get("combo_ids") as? List<String> ?: emptyList()
-                            product2Ref.update("combo_ids", currentComboIds2 + combo.comboId).await()
+                            product2Ref.update("combo_ids", currentComboIds2 + combo.comboId.toString()).await()
                         }
                         
                         success = "Combo creado exitosamente"

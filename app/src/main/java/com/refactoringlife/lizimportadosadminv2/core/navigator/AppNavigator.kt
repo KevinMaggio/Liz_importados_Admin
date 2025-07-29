@@ -8,6 +8,7 @@ import com.refactoringlife.lizimportadosadminv2.features.login.presenter.screens
 import com.refactoringlife.lizimportadosadminv2.features.home.presenter.screens.HomeScreen
 import com.refactoringlife.lizimportadosadminv2.features.addProduct.presenter.screens.AddProductScreen
 import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.CreateComboScreen
+import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.ManageCombosScreen
 import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.SelectProductForComboScreen
 import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.viewmodel.ComboViewModel
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.SelectProductForEditScreen
@@ -46,6 +47,7 @@ fun AppNavHost(
             HomeScreen(
                 onNavigateToAddProduct = { navController.navigate(AppRoutes.ADD_PRODUCT) },
                 onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
+                onNavigateToManageCombos = { navController.navigate(AppRoutes.MANAGE_COMBOS) },
                 onNavigateToSelectProductForEdit = { navController.navigate(AppRoutes.SELECT_PRODUCT_FOR_EDIT) },
                 onNavigateToEditProductDetail = { productId -> 
                     navController.navigate("${AppRoutes.EDIT_PRODUCT_DETAIL}/$productId")
@@ -66,6 +68,13 @@ fun AppNavHost(
                 onNavigateToSelectProduct = { productNumber ->
                     navController.navigate("${AppRoutes.SELECT_PRODUCT_FOR_COMBO}/$productNumber")
                 },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(AppRoutes.MANAGE_COMBOS) {
+            ManageCombosScreen(
+                onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
                 onNavigateBack = { navController.popBackStack() }
             )
         }

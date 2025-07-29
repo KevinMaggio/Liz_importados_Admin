@@ -44,8 +44,6 @@ fun ConfigAppScreen(
             image = ""
         )
     }) }
-    
-    // Estados para las imágenes
     var selectedImageUris by remember { mutableStateOf(List(4) { null as Uri? }) }
     var uploadedImageUrls by remember { mutableStateOf(List(4) { "" }) }
     

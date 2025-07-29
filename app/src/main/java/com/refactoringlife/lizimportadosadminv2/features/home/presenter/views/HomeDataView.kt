@@ -54,6 +54,7 @@ fun HomeDataView(
     onNavigateToAddProduct: () -> Unit = {},
     onNavigateToSelectProductForEdit: () -> Unit = {},
     onNavigateToCreateCombo: () -> Unit = {},
+    onNavigateToManageCombos: () -> Unit = {},
     onNavigateToEditProductDetail: (String) -> Unit = {},
     onNavigateToDeleteProduct: () -> Unit = {},
     onNavigateToVenderProducto: () -> Unit = {},
@@ -271,6 +272,15 @@ fun HomeDataView(
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
                 containerColor = Color(0xFFFF9800)
+            )
+            LipsyActionButton(
+                text = "Gestionar Combos",
+                icon = Icons.Default.ShoppingCart,
+                onClick = onNavigateToManageCombos,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFF9C27B0)
             )
             LipsyActionButton(
                 text = "Eliminar Producto",

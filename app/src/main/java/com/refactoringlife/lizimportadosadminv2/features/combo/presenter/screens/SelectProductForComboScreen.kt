@@ -41,7 +41,7 @@ data class ProductLightForCombo(
 // Modelo específico para productos en combos
 data class ComboProduct(
     val id: String,
-    val title: String?,
+    val name: String?, // Cambiar de title a name
     val price: Int?,
     val images: List<String>?
 )
@@ -184,7 +184,7 @@ fun SelectProductForComboScreen(
                                 // Convertir ProductLightForCombo a ComboProduct
                                 val comboProduct = ComboProduct(
                                     id = product.id,
-                                    title = product.name,
+                                    name = product.name,
                                     price = product.price,
                                     images = listOf(product.image ?: "")
                                 )

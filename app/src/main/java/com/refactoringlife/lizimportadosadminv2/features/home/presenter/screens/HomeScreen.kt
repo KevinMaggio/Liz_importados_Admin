@@ -10,6 +10,7 @@ import com.refactoringlife.lizimportadosadminv2.features.home.presenter.views.Ho
 fun HomeScreen(
     onNavigateToAddProduct: () -> Unit,
     onNavigateToCreateCombo: () -> Unit,
+    onNavigateToManageCombos: () -> Unit,
     onNavigateToSelectProductForEdit: () -> Unit,
     onNavigateToEditProductDetail: (String) -> Unit,
     onNavigateToDeleteProduct: () -> Unit,
@@ -19,6 +20,7 @@ fun HomeScreen(
     HomeDataView(
         onNavigateToAddProduct = onNavigateToAddProduct,
         onNavigateToCreateCombo = onNavigateToCreateCombo,
+        onNavigateToManageCombos = onNavigateToManageCombos,
         onNavigateToSelectProductForEdit = onNavigateToSelectProductForEdit,
         onNavigateToEditProductDetail = onNavigateToEditProductDetail,
         onNavigateToDeleteProduct = onNavigateToDeleteProduct,

@@ -2,7 +2,7 @@ package com.refactoringlife.lizimportadosadminv2.core.dto.response
 
 import kotlinx.serialization.SerialName
 
-data class ConfigResponse (
+data class ConfigResponse(
     @SerialName("is_offers")
     val isOffers: Boolean = false,
     @SerialName("options")
