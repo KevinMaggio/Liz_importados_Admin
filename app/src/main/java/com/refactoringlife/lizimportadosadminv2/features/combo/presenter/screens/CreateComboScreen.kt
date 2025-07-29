@@ -24,6 +24,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
+import com.refactoringlife.lizimportadosadminv2.core.network.service.ComboService
 
 @Composable
 fun CreateComboScreen(
@@ -44,8 +45,15 @@ fun CreateComboScreen(
     val coroutineScope = rememberCoroutineScope()
     
     // Generar ID automático del combo
+    val comboService = remember { ComboService() }
     LaunchedEffect(Unit) {
-        comboId = System.currentTimeMillis().toString()
+        try {
+            val nextId = comboService.getNextComboId()
+            comboId = nextId.toString()
+        } catch (e: Exception) {
+            // Fallback en caso de error
+            comboId = System.currentTimeMillis().toString()
+        }
     }
     
     // Calcular precio total de forma segura
@@ -242,30 +250,34 @@ fun CreateComboScreen(
                 coroutineScope.launch {
                     try {
                         val combo = ComboRequest(
-                            comboId = comboId.toIntOrNull() ?: System.currentTimeMillis().toInt(),
+                            comboId = comboId.toIntOrNull() ?: 0, // ComboService asignará el ID correcto
                             oldPrice = oldPrice,
                             newPrice = newPrice.toInt(),
                             product1Id = product1?.id ?: "",
                             product2Id = product2?.id ?: ""
                         )
                         
-                        // Guardar combo
-                        val db = Firebase.firestore
-                        db.collection("combos").document(combo.comboId.toString()).set(combo).await()
-                        
-                        // Actualizar productos con comboId
-                        product1?.id?.let { product1Id ->
-                            val product1Ref = db.collection("products").document(product1Id)
-                            val product1Doc = product1Ref.get().await()
-                            val currentComboIds = product1Doc.get("combo_ids") as? List<String> ?: emptyList()
-                            product1Ref.update("combo_ids", currentComboIds + combo.comboId.toString()).await()
-                        }
-                        
-                        product2?.id?.let { product2Id ->
-                            val product2Ref = db.collection("products").document(product2Id)
-                            val product2Doc = product2Ref.get().await()
-                            val currentComboIds2 = product2Doc.get("combo_ids") as? List<String> ?: emptyList()
-                            product2Ref.update("combo_ids", currentComboIds2 + combo.comboId.toString()).await()
+                        // Guardar combo usando ComboService
+                        val saveResult = comboService.saveCombo(combo)
+                        if (saveResult.isSuccess) {
+                            // Actualizar productos con comboId
+                            val db = Firebase.firestore
+                            product1?.id?.let { product1Id ->
+                                val product1Ref = db.collection("products").document(product1Id)
+                                val product1Doc = product1Ref.get().await()
+                                val currentComboIds = product1Doc.get("combo_ids") as? List<String> ?: emptyList()
+                                product1Ref.update("combo_ids", currentComboIds + combo.comboId.toString()).await()
+                            }
+                            
+                            product2?.id?.let { product2Id ->
+                                val product2Ref = db.collection("products").document(product2Id)
+                                val product2Doc = product2Ref.get().await()
+                                val currentComboIds2 = product2Doc.get("combo_ids") as? List<String> ?: emptyList()
+                                product2Ref.update("combo_ids", currentComboIds2 + combo.comboId.toString()).await()
+                            }
+                        } else {
+                            // Manejar error de guardado
+                            throw Exception("Error al guardar combo: ${saveResult.exceptionOrNull()?.message}")
                         }
                         
                         success = "Combo creado exitosamente"

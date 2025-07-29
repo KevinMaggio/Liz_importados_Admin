@@ -17,9 +17,9 @@ class ImageOptimizer {
     companion object {
         private const val TAG = "ImageOptimizer"
         private const val MAX_WIDTH = 600 // Reducir ancho máximo para productos
-        private const val TARGET_SIZE_KB = 80 // Reducir más con WebP
-        private const val QUALITY_START = 85 // Calidad inicial más alta
-        private const val QUALITY_MIN = 25 // Calidad mínima más baja para WebP
+        private const val TARGET_SIZE_KB = 150 // Aumentar tamaño objetivo (era 80)
+        private const val QUALITY_START = 90 // Calidad inicial más alta (era 85)
+        private const val QUALITY_MIN = 60 // Calidad mínima más alta (era 25)
     }
 
     data class OptimizationResult(
@@ -176,7 +176,7 @@ class ImageOptimizer {
 
         while (shouldContinue && quality >= QUALITY_MIN) {
             ByteArrayOutputStream().use { outputStream ->
-                // Cambiar a WebP para mejor compresión
+                // Usar WebP para mejor compresión
                 bitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
                 val bytes = outputStream.toByteArray()
                 val sizeKB = bytes.size / 1024
@@ -188,27 +188,10 @@ class ImageOptimizer {
                     shouldContinue = false
                     Log.d(TAG, "✅ Calidad final: $quality, Tamaño: $sizeKB KB (WebP)")
                 } else {
-                    // Reducir calidad más agresivamente
-                    quality -= if (sizeKB > TARGET_SIZE_KB * 2) 15 else 10
+                    // Reducir calidad gradualmente
+                    quality -= 5
                 }
             }
-        }
-
-        // Si aún es muy grande, reducir más la resolución
-        if (bestBytes != null && bestBytes!!.size / 1024 > TARGET_SIZE_KB * 1.5) {
-            Log.d(TAG, "🔄 Reduciendo resolución adicional...")
-            val scaledBitmap = Bitmap.createScaledBitmap(
-                bitmap, 
-                bitmap.width / 2, 
-                bitmap.height / 2, 
-                true
-            )
-            ByteArrayOutputStream().use { outputStream ->
-                scaledBitmap.compress(Bitmap.CompressFormat.WEBP, QUALITY_MIN, outputStream)
-                bestBytes = outputStream.toByteArray()
-                scaledBitmap.recycle()
-            }
-            Log.d(TAG, "✅ Tamaño final después de escalado: ${bestBytes!!.size / 1024} KB (WebP)")
         }
 
         return bestBytes ?: ByteArrayOutputStream().also { 

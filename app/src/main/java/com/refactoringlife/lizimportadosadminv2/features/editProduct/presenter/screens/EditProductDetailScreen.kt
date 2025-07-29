@@ -120,8 +120,18 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
                 category = prod.category ?: ""
                 comboIds = prod.comboIds ?: emptyList()
                 gender = prod.gender ?: ""
+                
+                // Debug: Log de valores booleanos
+                android.util.Log.d("EditProductDetail", "Raw isAvailable: ${prod.isAvailable}")
+                android.util.Log.d("EditProductDetail", "Raw isOffer: ${prod.isOffer}")
+                
                 isAvailable = prod.isAvailable == true
                 isOffer = prod.isOffer == true
+                
+                // Debug: Log de valores procesados
+                android.util.Log.d("EditProductDetail", "Processed isAvailable: $isAvailable")
+                android.util.Log.d("EditProductDetail", "Processed isOffer: $isOffer")
+                
                 offerPrice = prod.offerPrice.toString()
                 price = prod.price?.toString() ?: ""
                 images = prod.images ?: emptyList()
