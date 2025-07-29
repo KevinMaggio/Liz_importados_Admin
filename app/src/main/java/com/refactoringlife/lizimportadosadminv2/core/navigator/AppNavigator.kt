@@ -1,38 +1,31 @@
 package com.refactoringlife.lizimportadosadminv2.core.navigator
 
-import android.content.Intent
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.composable
-import com.refactoringlife.lizimportadosadminv2.features.home.presenter.screens.HomeScreen
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import com.refactoringlife.lizimportadosadminv2.features.login.presenter.screens.LoginScreen
-import com.refactoringlife.lizimportadosadminv2.features.login.presenter.viewmodel.LoginViewModel
+import com.refactoringlife.lizimportadosadminv2.features.home.presenter.screens.HomeScreen
 import com.refactoringlife.lizimportadosadminv2.features.addProduct.presenter.screens.AddProductScreen
 import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.CreateComboScreen
+import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.SelectProductForComboScreen
+import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.viewmodel.ComboViewModel
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.SelectProductForEditScreen
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.EditProductDetailScreen
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.DeleteProductScreen
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.VenderProductoScreen
 import com.refactoringlife.lizimportadosadminv2.features.config.presenter.screens.ConfigAppScreen
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
+import com.refactoringlife.lizimportadosadminv2.features.login.presenter.viewmodel.LoginViewModel
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier,
+    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
     viewModel: LoginViewModel,
-    onGoogleSignInClick: (Intent) -> Unit
+    comboViewModel: ComboViewModel,
+    onGoogleSignInClick: (android.content.Intent) -> Unit
 ) {
-    AnimatedNavHost(
+    NavHost(
         navController = navController,
         startDestination = AppRoutes.LOGIN,
         modifier = modifier
@@ -54,6 +47,9 @@ fun AppNavHost(
                 onNavigateToAddProduct = { navController.navigate(AppRoutes.ADD_PRODUCT) },
                 onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
                 onNavigateToSelectProductForEdit = { navController.navigate(AppRoutes.SELECT_PRODUCT_FOR_EDIT) },
+                onNavigateToEditProductDetail = { productId -> 
+                    navController.navigate("${AppRoutes.EDIT_PRODUCT_DETAIL}/$productId")
+                },
                 onNavigateToDeleteProduct = { navController.navigate(AppRoutes.DELETE_PRODUCT) },
                 onNavigateToVenderProducto = { navController.navigate(AppRoutes.VENDER_PRODUCTO) },
                 onNavigateToConfigApp = { navController.navigate(AppRoutes.CONFIG_APP) }
@@ -65,7 +61,24 @@ fun AppNavHost(
         }
         
         composable(AppRoutes.CREATE_COMBO) {
-            CreateComboScreen()
+            CreateComboScreen(
+                viewModel = comboViewModel,
+                onNavigateToSelectProduct = { productNumber ->
+                    navController.navigate("${AppRoutes.SELECT_PRODUCT_FOR_COMBO}/$productNumber")
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(
+            route = "${AppRoutes.SELECT_PRODUCT_FOR_COMBO}/{productNumber}"
+        ) { backStackEntry ->
+            val productNumber = backStackEntry.arguments?.getString("productNumber")?.toIntOrNull() ?: 1
+            SelectProductForComboScreen(
+                productNumber = productNumber,
+                viewModel = comboViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(AppRoutes.SELECT_PRODUCT_FOR_EDIT) {
@@ -77,8 +90,7 @@ fun AppNavHost(
         }
         
         composable(
-            route = "${AppRoutes.EDIT_PRODUCT_DETAIL}/{productId}",
-            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+            route = "${AppRoutes.EDIT_PRODUCT_DETAIL}/{productId}"
         ) { backStackEntry ->
             val productId = backStackEntry.arguments?.getString("productId") ?: ""
             EditProductDetailScreen(

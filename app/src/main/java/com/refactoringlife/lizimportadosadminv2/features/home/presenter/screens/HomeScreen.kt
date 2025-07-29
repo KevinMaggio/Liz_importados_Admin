@@ -11,6 +11,7 @@ fun HomeScreen(
     onNavigateToAddProduct: () -> Unit,
     onNavigateToCreateCombo: () -> Unit,
     onNavigateToSelectProductForEdit: () -> Unit,
+    onNavigateToEditProductDetail: (String) -> Unit,
     onNavigateToDeleteProduct: () -> Unit,
     onNavigateToVenderProducto: () -> Unit,
     onNavigateToConfigApp: () -> Unit
@@ -19,6 +20,7 @@ fun HomeScreen(
         onNavigateToAddProduct = onNavigateToAddProduct,
         onNavigateToCreateCombo = onNavigateToCreateCombo,
         onNavigateToSelectProductForEdit = onNavigateToSelectProductForEdit,
+        onNavigateToEditProductDetail = onNavigateToEditProductDetail,
         onNavigateToDeleteProduct = onNavigateToDeleteProduct,
         onNavigateToVenderProducto = onNavigateToVenderProducto,
         onNavigateToConfigApp = onNavigateToConfigApp

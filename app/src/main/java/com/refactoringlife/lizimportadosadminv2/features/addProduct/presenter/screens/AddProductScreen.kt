@@ -381,7 +381,8 @@ suspend fun saveProductToFirestore(product: ProductRequest): Result<Unit> = with
             "offer_price" to 0,
             "price" to product.price,
             "season" to "",
-            "circle_option_filter" to ""
+            "circle_option_filter" to "",
+            "combo_ids" to emptyList<String>() // Nuevo campo para combos
         )
         db.collection("products").document(product.id).set(productMap).await()
         Result.success(Unit)

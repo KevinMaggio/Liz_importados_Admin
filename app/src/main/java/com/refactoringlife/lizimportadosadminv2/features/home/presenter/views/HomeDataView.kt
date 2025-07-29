@@ -54,6 +54,7 @@ fun HomeDataView(
     onNavigateToAddProduct: () -> Unit = {},
     onNavigateToSelectProductForEdit: () -> Unit = {},
     onNavigateToCreateCombo: () -> Unit = {},
+    onNavigateToEditProductDetail: (String) -> Unit = {},
     onNavigateToDeleteProduct: () -> Unit = {},
     onNavigateToVenderProducto: () -> Unit = {},
     onNavigateToTestImageProcessing: () -> Unit = {},

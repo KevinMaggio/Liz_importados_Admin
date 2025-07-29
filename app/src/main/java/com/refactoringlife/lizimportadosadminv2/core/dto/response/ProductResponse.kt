@@ -3,36 +3,32 @@ package com.refactoringlife.lizimportadosadminv2.core.dto.response
 import kotlinx.serialization.SerialName
 
 data class ProductResponse(
+    @SerialName("id")
+    val id : String = "",
+    @SerialName("name")
+    val name: String? = null,
+    @SerialName("description")
+    val description: String? = null,
     @SerialName("brand")
-    val brand: String?,
-    @SerialName("category")
-    val category: String?,
-    @SerialName("combo_ids")
-    val comboIds: List<String>?,
+    val brand: String? = null,
     @SerialName("size")
     val size: String? = "",
+    @SerialName("category")
+    val category: String? = null,
+    @SerialName("combo_ids")
+    val comboIds: List<String>?,
     @SerialName("combo_price")
-    val comboPrice: Int?,
+    val comboPrice: Int? = null,
     @SerialName("gender")
-    val gender: String?,
+    val gender: String? = null,
     @SerialName("images")
-    val images: List<String>?,
+    val images: List<String>? = null,
     @SerialName("is_available")
-    val isAvailable: Boolean?,
+    val isAvailable: Boolean? = null,
     @SerialName("is_offer")
-    val isOffer: Boolean?,
+    val isOffer: Boolean? = null,
     @SerialName("offer_price")
-    val offerPrice: Int,
-    @SerialName("old_price")
-    val oldPrice: Int?,
+    val offerPrice: Int = 0,
     @SerialName("price")
-    val price: Int?,
-    @SerialName("season")
-    val season: String?,
-    @SerialName("subtitle")
-    val subtitle: String?,
-    @SerialName("title")
-    val title: String?,
-    @SerialName("circle_option_filter")
-    val circleOptionFilter: String?
+    val price: Int? = null
 )

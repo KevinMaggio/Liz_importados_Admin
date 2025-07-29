@@ -15,8 +15,8 @@ data class ProductRequest (
     val size: String? = "",
     @SerialName("category")
     val category: String? = null,
-    @SerialName("combo_id")
-    val comboId: List<String>? = null,
+    @SerialName("combo_ids")
+    val comboIds: List<String>?,
     @SerialName("combo_price")
     val comboPrice: Int? = null,
     @SerialName("gender")
@@ -30,9 +30,5 @@ data class ProductRequest (
     @SerialName("offer_price")
     val offerPrice: Int = 0,
     @SerialName("price")
-    val price: Int? = null,
-    @SerialName("season")
-    val season: String? = null,
-    @SerialName("circle_option_filter")
-    val circleOptionFilter: String? = null
+    val price: Int? = null
 )
