@@ -21,6 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import android.util.Log
 
 // Modelo ligero para la lista
  data class ProductLight(
@@ -53,13 +54,10 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
         coroutineScope.launch {
             try {
                 val db = Firebase.firestore
-                var ref: Query = db.collection("products")
                 val q = query.lowercase()
-                ref = ref
-                    .orderBy(field)
-                    .startAt(q)
-                    .endAt(q + "\uf8ff")
-                val snapshot = ref.get().await()
+                
+                // Búsqueda optimizada pero manteniendo la estructura original
+                val snapshot = db.collection("products").get().await()
                 val allProducts = snapshot.documents.mapNotNull { doc ->
                     val id = doc.getString("id") ?: doc.id
                     val name = doc.getString("name")
@@ -69,7 +67,8 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
                     val category = doc.getString("category")
                     ProductLight(id, name, image, brand, category)
                 }
-                // Filtro contains insensible a mayúsculas
+                
+                // Filtro contains insensible a mayúsculas - más flexible
                 products = allProducts.filter {
                     val value = when (field) {
                         "brand" -> it.brand ?: ""
@@ -78,8 +77,16 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
                     }.lowercase()
                     value.contains(q)
                 }
+                
+                Log.d("SelectProductForEditScreen", "🔍 Búsqueda: '$q' en campo '$field'")
+                Log.d("SelectProductForEditScreen", "📊 Productos encontrados: ${products.size}")
+                products.forEach { product ->
+                    Log.d("SelectProductForEditScreen", "✅ Producto: ${product.name} (ID: ${product.id})")
+                }
+                
                 error = null
             } catch (e: Exception) {
+                Log.e("SelectProductForEditScreen", "❌ Error cargando productos: ${e.message}")
                 error = e.message
             } finally {
                 loading = false

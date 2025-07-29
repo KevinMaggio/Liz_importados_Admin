@@ -107,6 +107,13 @@ fun AddProductScreen() {
                             imageSizes[uri] = optimizedResult.sizeKB
                             Log.d("AddProductScreen", "✅ Imagen optimizada: ${optimizedResult.sizeKB} KB")
                             
+                            // Verificar tamaño máximo antes de subir
+                            if (optimizedResult.sizeKB > 300) { // 300 KB máximo para WebP
+                                Log.w("AddProductScreen", "⚠️ Imagen muy grande: ${optimizedResult.sizeKB} KB")
+                                checks.add(false)
+                                continue
+                            }
+                            
                             val imageUrl = uploadImageToStorage(context, optimizedResult.uri)
                             if (imageUrl != null) {
                                 urls.add(imageUrl)

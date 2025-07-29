@@ -13,7 +13,7 @@ suspend fun uploadImageToStorage(context: Context, imageUri: Uri): String? {
         Log.d("StorageUtils", "🚀 Iniciando subida de imagen: $imageUri")
         
         val storage = Firebase.storage
-        val fileName = "productos/${UUID.randomUUID()}.jpg"
+        val fileName = "productos/${UUID.randomUUID()}.webp"
         val storageRef = storage.reference.child(fileName)
         
         Log.d("StorageUtils", "📁 Archivo destino: $fileName")

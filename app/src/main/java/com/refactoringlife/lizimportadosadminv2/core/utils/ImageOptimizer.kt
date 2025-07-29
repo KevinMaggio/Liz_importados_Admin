@@ -16,10 +16,10 @@ import java.io.InputStream
 class ImageOptimizer {
     companion object {
         private const val TAG = "ImageOptimizer"
-        private const val MAX_WIDTH = 800 // Ancho máximo para fotos de productos
-        private const val TARGET_SIZE_KB = 200 // Tamaño objetivo en KB
-        private const val QUALITY_START = 80 // Calidad inicial de compresión JPEG
-        private const val QUALITY_MIN = 50 // Calidad mínima aceptable
+        private const val MAX_WIDTH = 600 // Reducir ancho máximo para productos
+        private const val TARGET_SIZE_KB = 80 // Reducir más con WebP
+        private const val QUALITY_START = 85 // Calidad inicial más alta
+        private const val QUALITY_MIN = 25 // Calidad mínima más baja para WebP
     }
 
     data class OptimizationResult(
@@ -176,28 +176,48 @@ class ImageOptimizer {
 
         while (shouldContinue && quality >= QUALITY_MIN) {
             ByteArrayOutputStream().use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+                // Cambiar a WebP para mejor compresión
+                bitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
                 val bytes = outputStream.toByteArray()
                 val sizeKB = bytes.size / 1024
                 
-                Log.d(TAG, "📊 Prueba con calidad $quality: $sizeKB KB")
+                Log.d(TAG, "📊 Prueba con calidad $quality: $sizeKB KB (WebP)")
                 
                 if (sizeKB <= TARGET_SIZE_KB || quality <= QUALITY_MIN) {
                     bestBytes = bytes
                     shouldContinue = false
+                    Log.d(TAG, "✅ Calidad final: $quality, Tamaño: $sizeKB KB (WebP)")
                 } else {
-                    quality -= 5
+                    // Reducir calidad más agresivamente
+                    quality -= if (sizeKB > TARGET_SIZE_KB * 2) 15 else 10
                 }
             }
         }
 
+        // Si aún es muy grande, reducir más la resolución
+        if (bestBytes != null && bestBytes!!.size / 1024 > TARGET_SIZE_KB * 1.5) {
+            Log.d(TAG, "🔄 Reduciendo resolución adicional...")
+            val scaledBitmap = Bitmap.createScaledBitmap(
+                bitmap, 
+                bitmap.width / 2, 
+                bitmap.height / 2, 
+                true
+            )
+            ByteArrayOutputStream().use { outputStream ->
+                scaledBitmap.compress(Bitmap.CompressFormat.WEBP, QUALITY_MIN, outputStream)
+                bestBytes = outputStream.toByteArray()
+                scaledBitmap.recycle()
+            }
+            Log.d(TAG, "✅ Tamaño final después de escalado: ${bestBytes!!.size / 1024} KB (WebP)")
+        }
+
         return bestBytes ?: ByteArrayOutputStream().also { 
-            bitmap.compress(Bitmap.CompressFormat.JPEG, QUALITY_MIN, it)
+            bitmap.compress(Bitmap.CompressFormat.WEBP, QUALITY_MIN, it)
         }.toByteArray()
     }
 
     private fun saveOptimizedImage(context: Context, imageBytes: ByteArray): Uri {
-        val fileName = "optimized_${System.currentTimeMillis()}.jpg"
+        val fileName = "optimized_${System.currentTimeMillis()}.webp"
         val file = File(context.filesDir, fileName)
         
         FileOutputStream(file).use { outputStream ->
