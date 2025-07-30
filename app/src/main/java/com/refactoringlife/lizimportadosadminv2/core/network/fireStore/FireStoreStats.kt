@@ -57,7 +57,7 @@ object FireStoreStats {
         var activos = 0
         var vendidos = 0
         for (doc in snapshot.documents) {
-            if (doc.getBoolean("activo") == true) activos++
+            if (doc.getBoolean("is_available") == true) activos++ // Corregido: usar is_available en lugar de activo
             vendidos += doc.getLong("vendidos")?.toInt() ?: 0
         }
         return activos to vendidos
@@ -65,9 +65,9 @@ object FireStoreStats {
 
     // Obtener productos con bajo stock
     suspend fun getProductosBajoStock(umbral: Int = 5): List<String> {
-        val snapshot = db.collection("productos")
+        val snapshot = db.collection("products") // Corregido: usar 'products' en lugar de 'productos'
             .whereLessThanOrEqualTo("stock", umbral)
             .get().await()
-        return snapshot.documents.mapNotNull { it.getString("nombre") }
+        return snapshot.documents.mapNotNull { it.getString("name") } // Corregido: usar 'name' en lugar de 'nombre'
     }
 } 

@@ -17,6 +17,7 @@ import com.google.firebase.ktx.Firebase
 import com.refactoringlife.lizimportadosadminv2.core.dto.response.ProductResponse
 import com.refactoringlife.lizimportadosadminv2.core.utils.ProductConstants
 import com.refactoringlife.lizimportadosadminv2.core.composablesLipsy.LipsyDropdown
+import com.refactoringlife.lizimportadosadminv2.core.composablesLipsy.LipsyMultiSelect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import androidx.compose.animation.AnimatedVisibility
@@ -38,7 +39,7 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
     var description by remember { mutableStateOf("") }
     var brand by remember { mutableStateOf("") }
     var size by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("") }
+    var selectedCategories by remember { mutableStateOf<List<String>>(emptyList()) }
     var comboIds by remember { mutableStateOf<List<String>>(emptyList()) }
     var gender by remember { mutableStateOf("") }
     var isAvailable by remember { mutableStateOf(false) }
@@ -117,7 +118,7 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
                 description = prod.description ?: ""
                 brand = prod.brand ?: ""
                 size = prod.size ?: ""
-                category = prod.category ?: ""
+                selectedCategories = prod.categories ?: emptyList()
                 comboIds = prod.comboIds ?: emptyList()
                 gender = prod.gender ?: ""
                 
@@ -230,15 +231,15 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
         Text("Anterior: ${original?.size ?: "-"}", fontSize = 12.sp, color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Categoría (Dropdown)
-        LipsyDropdown(
-            label = "Categoría",
+        // Categorías múltiples
+        LipsyMultiSelect(
+            label = "Categorías",
             options = ProductConstants.CATEGORIES,
-            selectedOption = category,
-            onOptionSelected = { category = it },
+            selectedOptions = selectedCategories,
+            onSelectionChanged = { selectedCategories = it },
             modifier = Modifier.fillMaxWidth()
         )
-        Text("Anterior: ${original?.category ?: "-"}", fontSize = 12.sp, color = Color.Gray)
+        Text("Anterior: ${original?.categories?.joinToString(", ") ?: "-"}", fontSize = 12.sp, color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
         
         // Género (Dropdown)
@@ -322,7 +323,7 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
                     if (description != original?.description) cambios["description"] = description
                     if (brand != original?.brand) cambios["brand"] = brand
                     if (size != original?.size) cambios["size"] = size
-                    if (category != original?.category) cambios["category"] = category
+                    if (selectedCategories != original?.categories) cambios["categories"] = selectedCategories
                     if (gender != original?.gender) cambios["gender"] = gender
                     if (isAvailable != (original?.isAvailable == true)) cambios["is_available"] = isAvailable
                     if (isOffer != (original?.isOffer == true)) cambios["is_offer"] = isOffer

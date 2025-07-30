@@ -1,12 +1,14 @@
 package com.refactoringlife.lizimportadosadminv2.core.dto.request
 
+import kotlinx.serialization.SerialName
+
 data class ProductRequest(
     val id: String = "",
     val name: String? = null,
     val description: String? = null,
     val brand: String? = null,
     val size: String? = "",
-    val category: String? = null,
+    val categories: List<String>? = null,
     val comboIds: List<String>? = null,
     val comboPrice: Int? = null,
     val gender: String? = null,
@@ -23,7 +25,7 @@ data class ProductRequest(
         description = null,
         brand = null,
         size = "",
-        category = null,
+        categories = null,
         comboIds = null,
         comboPrice = null,
         gender = null,

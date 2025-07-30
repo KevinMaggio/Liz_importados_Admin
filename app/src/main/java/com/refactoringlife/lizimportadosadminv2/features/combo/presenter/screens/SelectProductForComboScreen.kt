@@ -34,7 +34,7 @@ data class ProductLightForCombo(
     val name: String?,
     val image: String?,
     val brand: String? = null,
-    val category: String? = null,
+    val categories: List<String>? = null,
     val price: Int = 0
 )
 
@@ -59,7 +59,7 @@ fun SelectProductForComboScreen(
     var searchField by remember { mutableStateOf("name") }
     val coroutineScope = rememberCoroutineScope()
     var debounceJob by remember { mutableStateOf<Job?>(null) }
-    val searchFields = listOf("name" to "Nombre", "brand" to "Marca", "category" to "Categoría")
+    val searchFields = listOf("name" to "Nombre", "brand" to "Marca", "categories" to "Categorías")
     var expanded by remember { mutableStateOf(false) }
 
     fun loadProducts(query: String, field: String) {
@@ -82,16 +82,17 @@ fun SelectProductForComboScreen(
                     val images = doc.get("images") as? List<*>
                     val image = images?.firstOrNull() as? String
                     val brand = doc.getString("brand")
-                    val category = doc.getString("category")
+                    val categories = doc.get("categories") as? List<*>
+                    val categoriesList = categories?.mapNotNull { it as? String }
                     val price = doc.getLong("price")?.toInt() ?: 0
-                    ProductLightForCombo(id, name, image, brand, category, price)
+                    ProductLightForCombo(id, name, image, brand, categoriesList, price)
                 }
                 
                 // Filtro contains insensible a mayúsculas - más flexible
                 products = allProducts.filter {
                     val value = when (field) {
                         "brand" -> it.brand ?: ""
-                        "category" -> it.category ?: ""
+                        "categories" -> it.categories?.joinToString(", ") ?: ""
                         else -> it.name ?: ""
                     }.lowercase()
                     value.contains(q)
@@ -211,6 +212,13 @@ fun SelectProductForComboScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = product.name ?: "Sin nombre", color = Color.Black)
                             Text(text = "Precio: $${product.price}", color = Color.Gray)
+                            if (product.categories?.isNotEmpty() == true) {
+                                Text(
+                                    text = "Categorías: ${product.categories.joinToString(", ")}",
+                                    color = Color.Gray,
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
                     }
                 }

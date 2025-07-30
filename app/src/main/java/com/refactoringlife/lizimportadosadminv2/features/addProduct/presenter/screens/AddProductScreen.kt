@@ -1,11 +1,8 @@
 package com.refactoringlife.lizimportadosadminv2.features.addProduct.presenter.screens
 
-
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -34,44 +31,45 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.refactoringlife.lizimportadosadminv2.core.utils.ProductConstants
 import com.refactoringlife.lizimportadosadminv2.core.composablesLipsy.LipsyDropdown
+import com.refactoringlife.lizimportadosadminv2.core.composablesLipsy.LipsyMultiSelect
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import android.util.Log
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import kotlinx.coroutines.tasks.await
+import com.refactoringlife.lizimportadosadminv2.core.repository.ProductRepository
 
-@RequiresApi(Build.VERSION_CODES.R)
 @Composable
-fun AddProductScreen() {
+fun AddProductScreen(
+    onNavigateBack: () -> Unit
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
-    val (processing, setProcessing) = remember { mutableStateOf(false) }
-    val (selectedUris, setSelectedUris) = remember { mutableStateOf<List<Uri>>(emptyList()) }
-    val (uploadedUrls, setUploadedUrls) = remember { mutableStateOf<List<String>>(emptyList()) }
-    val (uploadChecks, setUploadChecks) = remember { mutableStateOf<List<Boolean>>(emptyList()) }
-    val (error, setError) = remember { mutableStateOf<String?>(null) }
-    val (success, setSuccess) = remember { mutableStateOf<String?>(null) }
-    val (showSuccess, setShowSuccess) = remember { mutableStateOf(false) }
+    var processing by remember { mutableStateOf(false) }
+    var selectedUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var uploadedUrls by remember { mutableStateOf<List<String>>(emptyList()) }
+    var uploadChecks by remember { mutableStateOf<List<Boolean>>(emptyList()) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var success by remember { mutableStateOf<String?>(null) }
+    var showSuccess by remember { mutableStateOf(false) }
 
     // Verificar autenticación
     val auth = Firebase.auth
     val currentUser = auth.currentUser
 
     // Campos del formulario
-    val (name, setName) = remember { mutableStateOf("") }
-    val (description, setDescription) = remember { mutableStateOf("") }
-    val (brand, setBrand) = remember { mutableStateOf("") }
-    val (size, setSize) = remember { mutableStateOf("") }
-    val (category, setCategory) = remember { mutableStateOf("") }
-    val (gender, setGender) = remember { mutableStateOf("") }
-    val (price, setPrice) = remember { mutableStateOf("") }
-    // Eliminados del formulario: comboId, comboPrice, isOffer, offerPrice, season, circleOptionFilter
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var brand by remember { mutableStateOf("") }
+    var size by remember { mutableStateOf("") }
+    var selectedCategories by remember { mutableStateOf<List<String>>(emptyList()) }
+    var gender by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
 
     // Agregar estado para tamaños de imágenes
     val imageSizes = remember { mutableStateMapOf<Uri, Long>() }
@@ -83,15 +81,15 @@ fun AddProductScreen() {
             // Verificar autenticación antes de procesar
             if (currentUser == null) {
                 Log.e("AddProductScreen", "❌ Usuario no autenticado")
-                setError("Debes iniciar sesión para subir imágenes")
+                error = "Debes iniciar sesión para subir imágenes"
                 return@rememberLauncherForActivityResult
             }
             
             Log.d("AddProductScreen", "✅ Usuario autenticado: ${currentUser.email}")
-            setProcessing(true)
-            setSelectedUris(uris)
-            setUploadChecks(List(uris.size) { false })
-            setUploadedUrls(emptyList())
+            processing = true
+            selectedUris = uris
+            uploadChecks = List(uris.size) { false }
+            uploadedUrls = emptyList()
             coroutineScope.launch {
                 val urls = mutableListOf<String>()
                 val checks = mutableListOf<Boolean>()
@@ -99,104 +97,77 @@ fun AddProductScreen() {
                     try {
                         Log.d("AddProductScreen", "🖼️ Procesando imagen ${index + 1}/${uris.size}: $uri")
                         
-                        val processor = ImageProcessor()
-                        val result = processor.processImage(context, uri)
-                        
+                        // Procesar imagen
+                        val result = ImageProcessor.processImage(context, uri)
                         if (result.isSuccess) {
                             val optimizedResult = result.getOrNull()!!
-                            imageSizes[uri] = optimizedResult.sizeKB
                             Log.d("AddProductScreen", "✅ Imagen optimizada: ${optimizedResult.sizeKB} KB")
                             
-                            // Verificar tamaño máximo antes de subir
-                            if (optimizedResult.sizeKB > 300) { // 300 KB máximo para WebP
-                                Log.w("AddProductScreen", "⚠️ Imagen muy grande: ${optimizedResult.sizeKB} KB")
-                                checks.add(false)
-                                continue
-                            }
+                            // Guardar tamaño para mostrar
+                            imageSizes[uri] = optimizedResult.sizeKB
                             
-                            val imageUrl = uploadImageToStorage(context, optimizedResult.uri)
+                            // Subir a Storage
+                            val imageUrl = uploadImageToStorage(context = context,
+                                imageUri = optimizedResult.uri)
                             if (imageUrl != null) {
+                                Log.d("AddProductScreen", "✅ Imagen subida: $imageUrl")
                                 urls.add(imageUrl)
                                 checks.add(true)
-                                Log.d("AddProductScreen", "✅ Imagen subida: $imageUrl")
                             } else {
                                 checks.add(false)
-                                Log.e("AddProductScreen", "❌ Error subiendo imagen ${index + 1}")
+                                error = "Error subiendo imagen ${index + 1}"
                             }
                         } else {
                             checks.add(false)
-                            Log.e("AddProductScreen", "❌ Error procesando imagen ${index + 1}: ${result.exceptionOrNull()?.message}")
+                            error = "Error procesando imagen ${index + 1}: ${result.exceptionOrNull()?.message}"
                         }
                     } catch (e: Exception) {
+                        Log.e("AddProductScreen", "❌ Error inesperado: ${e.message}")
                         checks.add(false)
-                        Log.e("AddProductScreen", "❌ Error inesperado procesando imagen ${index + 1}: ${e.message}")
-                        e.printStackTrace()
+                        error = "Error inesperado en imagen ${index + 1}: ${e.message}"
                     }
-                    
-                    setUploadChecks(checks.toList())
-                    setUploadedUrls(urls.toList())
                 }
-                setProcessing(false)
+                uploadedUrls = urls
+                uploadChecks = checks
+                processing = false
             }
         }
     }
 
-    var selectedCategory by remember { mutableStateOf(ProductConstants.SELECT_OPTION) }
-    var selectedGender by remember { mutableStateOf(ProductConstants.SELECT_OPTION) }
+    // Agregar ProductRepository
+    val productRepository = remember { ProductRepository() }
 
-    // Función para crear el ProductRequest
-    fun createProductRequest(): ProductRequest {
-        return ProductRequest(
-            id = UUID.randomUUID().toString(),
-            name = name,
-            description = description,
-            brand = brand,
-            size = size,
-            category = ProductConstants.getValueOrEmpty(category),
-            comboIds = emptyList(), // Inicialmente sin combos
-            comboPrice = null, // No usar comboPrice
-            gender = ProductConstants.getValueOrEmpty(gender),
-            images = uploadedUrls,
-            isAvailable = true,
-            isOffer = false,
-            offerPrice = 0,
-            price = price.toIntOrNull() ?: 0
-        )
+    suspend fun saveProductToFirestore(product: ProductRequest): Result<Unit> {
+        return productRepository.addProduct(product)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .imePadding()
-    ) {
-        SnackbarHost(hostState = snackbarHostState)
-        LazyColumn {
+    suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
+        addOnSuccessListener { cont.resume(it) }
+        addOnFailureListener { cont.resumeWithException(it) }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .imePadding(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             item {
                 Text(
                     text = "Agregar Producto",
-                    fontSize = 24.sp,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
-                // Mostrar estado de autenticación
-                if (currentUser != null) {
-                    Text(
-                        text = "✅ Conectado como: ${currentUser.email}",
-                        color = Color.Green,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                } else {
-                    Text(
-                        text = "❌ No estás conectado",
-                        color = Color.Red,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-                
                 Button(
-                    onClick = { imagePickerLauncher.launch("image/*") }, 
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = !processing && currentUser != null
                 ) {
                     Text("Seleccionar Imágenes")
@@ -217,12 +188,20 @@ fun AddProductScreen() {
                     Text("Imágenes seleccionadas:", modifier = Modifier.padding(top = 16.dp))
                 }
             }
-            itemsIndexed(selectedUris) { idx, _ ->
+            itemsIndexed(selectedUris) { idx, uri ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(4.dp)) {
                     Checkbox(checked = uploadChecks.getOrNull(idx) == true, onCheckedChange = null, enabled = false)
                     Text("Imagen ${idx + 1}")
                     if (uploadChecks.getOrNull(idx) == true) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = "Subida", tint = Color(0xFF388E3C), modifier = Modifier.size(20.dp).padding(start = 4.dp))
+                    }
+                    // Mostrar tamaño de imagen optimizada
+                    imageSizes[uri]?.let { sizeKB ->
+                        Text(
+                            text = " (${sizeKB} KB)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -233,7 +212,7 @@ fun AddProductScreen() {
                 Spacer(modifier = Modifier.size(16.dp))
                 OutlinedTextField(
                     value = name,
-                    onValueChange = setName,
+                    onValueChange = { name = it },
                     label = { Text("Nombre") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -247,7 +226,7 @@ fun AddProductScreen() {
                 // Descripción - Múltiples líneas
                 OutlinedTextField(
                     value = description,
-                    onValueChange = setDescription,
+                    onValueChange = { description = it },
                     label = { Text("Descripción") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -261,7 +240,7 @@ fun AddProductScreen() {
                 // Marca - Una línea
                 OutlinedTextField(
                     value = brand,
-                    onValueChange = setBrand,
+                    onValueChange = { brand = it },
                     label = { Text("Marca") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -275,7 +254,7 @@ fun AddProductScreen() {
                 // Talla - Una línea
                 OutlinedTextField(
                     value = size,
-                    onValueChange = setSize,
+                    onValueChange = { size = it },
                     label = { Text("Talla") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -286,12 +265,12 @@ fun AddProductScreen() {
                     )
                 )
 
-                // Dropdowns
-                LipsyDropdown(
-                    label = "Categoría",
+                // Categorías múltiples
+                LipsyMultiSelect(
+                    label = "Categorías",
                     options = ProductConstants.CATEGORIES,
-                    selectedOption = selectedCategory,
-                    onOptionSelected = { selectedCategory = it },
+                    selectedOptions = selectedCategories,
+                    onSelectionChanged = { selectedCategories = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
@@ -300,8 +279,8 @@ fun AddProductScreen() {
                 LipsyDropdown(
                     label = "Género",
                     options = ProductConstants.GENDERS,
-                    selectedOption = selectedGender,
-                    onOptionSelected = { selectedGender = it },
+                    selectedOption = gender,
+                    onOptionSelected = { gender = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
@@ -313,7 +292,7 @@ fun AddProductScreen() {
                     onValueChange = { newValue ->
                         // Solo permitir números
                         if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
-                            setPrice(newValue)
+                            price = newValue
                         }
                     },
                     label = { Text("Precio") },
@@ -327,72 +306,65 @@ fun AddProductScreen() {
                     )
                 )
 
-                // Eliminados del formulario: comboId, comboPrice, isOffer, offerPrice, season, circleOptionFilter
                 Spacer(modifier = Modifier.size(16.dp))
                 Button(
                     onClick = {
-                        setProcessing(true)
+                        processing = true
                         focusManager.clearFocus()
                         coroutineScope.launch {
-                            val product = createProductRequest()
+                            val product = ProductRequest(
+                                id = UUID.randomUUID().toString(),
+                                name = name.ifEmpty { null },
+                                description = description.ifEmpty { null },
+                                brand = brand.ifEmpty { null },
+                                size = size.ifEmpty { null },
+                                categories = if (selectedCategories.isNotEmpty()) selectedCategories else null,
+                                comboIds = emptyList(),
+                                gender = gender.ifEmpty { null },
+                                images = uploadedUrls,
+                                isAvailable = true, // Hardcodeado como true para nuevos productos
+                                isOffer = false, // Hardcodeado como false
+                                offerPrice = 0,
+                                price = price.toIntOrNull()
+                            )
                             val result = saveProductToFirestore(product)
                             if (result.isSuccess) {
-                                setSuccess(product.id)
-                                setShowSuccess(true)
+                                success = product.id
+                                showSuccess = true
                                 snackbarHostState.showSnackbar("Producto guardado con éxito")
                                 // Limpiar formulario
-                                setName("")
-                                setDescription("")
-                                setBrand("")
-                                setSize("")
-                                setCategory("")
-                                setGender("")
-                                setPrice("")
-                                setSelectedUris(emptyList())
-                                setUploadedUrls(emptyList())
-                                setUploadChecks(emptyList())
+                                name = ""
+                                description = ""
+                                brand = ""
+                                size = ""
+                                selectedCategories = emptyList()
+                                gender = ""
+                                price = ""
+                                selectedUris = emptyList()
+                                uploadedUrls = emptyList()
+                                uploadChecks = emptyList()
+                                imageSizes.clear()
+                                onNavigateBack()
                             } else {
-                                setError(result.exceptionOrNull()?.message)
+                                error = result.exceptionOrNull()?.message
                             }
-                            setProcessing(false)
+                            processing = false
                         }
                     },
                     enabled = !processing && uploadedUrls.isNotEmpty() && uploadedUrls.size == selectedUris.size
                 ) {
                     Text("Finalizar carga")
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Button(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Volver")
+                }
             }
         }
     }
-}
-
-suspend fun saveProductToFirestore(product: ProductRequest): Result<Unit> = withContext(Dispatchers.IO) {
-    try {
-        val db = Firebase.firestore
-        // Convertir el producto a Map para asegurar que los campos se guarden correctamente
-        val productMap = mapOf(
-            "id" to product.id,
-            "name" to product.name,
-            "description" to product.description,
-            "brand" to product.brand,
-            "size" to product.size,
-            "category" to product.category,
-            "combo_ids" to (product.comboIds ?: emptyList()),
-            "gender" to product.gender,
-            "images" to product.images,
-            "is_available" to true,
-            "is_offer" to false,
-            "offer_price" to 0,
-            "price" to product.price
-        )
-        db.collection("products").document(product.id).set(productMap).await()
-        Result.success(Unit)
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-}
-
-suspend fun <T> Task<T>.await(): T = suspendCancellableCoroutine { cont ->
-    addOnSuccessListener { cont.resume(it) }
-    addOnFailureListener { cont.resumeWithException(it) }
 } 

@@ -1,5 +1,6 @@
 package com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,160 +11,336 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import android.util.Log
+import java.util.Date
 
+data class ProductForSale(
+    val id: String,
+    val name: String?,
+    val image: String?,
+    val brand: String?,
+    val categories: List<String>?,
+    val price: Int,
+    val isCombo: Boolean = false,
+    val comboId: Int? = null
+)
 
 @Composable
-fun VenderProductoScreen() {
-    var loading by remember { mutableStateOf(false) }
+fun VenderProductoScreen(
+    onNavigateBack: () -> Unit
+) {
+    var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var products by remember { mutableStateOf<List<ProductLight>>(emptyList()) }
+    var products by remember { mutableStateOf<List<ProductForSale>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
-    var searchField by remember { mutableStateOf("name") }
     val coroutineScope = rememberCoroutineScope()
-    var debounceJob by remember { mutableStateOf<Job?>(null) }
-    val searchFields = listOf("name" to "Nombre", "brand" to "Marca", "category" to "Categoría")
-    var expanded by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedProduct by remember { mutableStateOf<ProductForSale?>(null) }
+    var processingVenta by remember { mutableStateOf(false) }
 
-    fun loadProducts(query: String, field: String) {
-        if (query.isBlank()) {
-            products = emptyList()
-            loading = false
-            return
-        }
-        loading = true
-        coroutineScope.launch {
-            try {
-                val db = Firebase.firestore
-                var ref: Query = db.collection("products")
-                val q = query.lowercase()
-                ref = ref
-                    .orderBy(field)
-                    .startAt(q)
-                    .endAt(q + "\uf8ff")
-                val snapshot = ref.get().await()
-                val allProducts = snapshot.documents.mapNotNull { doc ->
-                    val id = doc.getString("id") ?: doc.id
-                    val name = doc.getString("name")
-                    val images = doc.get("images") as? List<*>
-                    val image = images?.firstOrNull() as? String
-                    val brand = doc.getString("brand")
-                    val category = doc.getString("category")
-                    val isAvailable = doc.getBoolean("is_available") ?: true
-                    ProductLight(id, name, image, brand, category).takeIf { isAvailable }
-                }.filterNotNull()
-                // Filtro contains insensible a mayúsculas
-                products = allProducts.filter {
-                    val value = when (field) {
-                        "brand" -> it.brand ?: ""
-                        "category" -> it.category ?: ""
-                        else -> it.name ?: ""
-                    }.lowercase()
-                    value.contains(q)
-                }
-                error = null
-            } catch (e: Exception) {
-                error = e.message
-            } finally {
-                loading = false
-            }
-        }
-    }
-
-    fun onSearchChanged(query: String, field: String) {
-        debounceJob?.cancel()
-        debounceJob = coroutineScope.launch {
-            delay(500)
-            loadProducts(query, field)
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = {
-                    searchQuery = it
-                    onSearchChanged(it, searchField)
-                },
-                label = { Text("Buscar") },
-                modifier = Modifier.weight(1f)
-            )
-            Box {
-                Button(onClick = { expanded = true }) {
-                    Text("Buscar por: " + (searchFields.find { it.first == searchField }?.second ?: ""))
-                }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    searchFields.forEach { (field, label) ->
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (searchField == field) {
-                                        Icon(Icons.Default.Check, contentDescription = null, tint = Color.Blue)
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(label, color = Color.Blue)
-                                    } else {
-                                        Text(label)
-                                    }
-                                }
-                            },
-                            onClick = {
-                                searchField = field
-                                expanded = false
-                                onSearchChanged(searchQuery, field)
-                            }
+    // Dialog de confirmación de venta
+    if (showDialog && selectedProduct != null) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirmar Venta") },
+            text = { 
+                Column {
+                    Text("¿Confirmar la venta de:")
+                    Text(
+                        text = selectedProduct?.name ?: "",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Text("Precio: $${selectedProduct?.price}")
+                    if (selectedProduct?.isCombo == true) {
+                        Text(
+                            text = "(Combo #${selectedProduct?.comboId})",
+                            color = Color(0xFF1976D2)
                         )
                     }
                 }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            processingVenta = true
+                            try {
+                                val db = Firebase.firestore
+                                val batch = db.batch()
+                                
+                                // 1. Registrar la venta
+                                val ventaRef = db.collection("ventas").document()
+                                val ventaData = mapOf(
+                                    "fecha" to Date(),
+                                    "producto_id" to selectedProduct!!.id,
+                                    "precio" to selectedProduct!!.price,
+                                    "es_combo" to selectedProduct!!.isCombo,
+                                    "combo_id" to selectedProduct!!.comboId
+                                )
+                                batch.set(ventaRef, ventaData)
+                                
+                                // 2. Actualizar estadísticas del producto
+                                val productRef = db.collection("products").document(selectedProduct!!.id)
+                                val productDoc = productRef.get().await()
+                                val ventasActuales = productDoc.getLong("vendidos")?.toInt() ?: 0
+                                batch.update(productRef, "vendidos", ventasActuales + 1)
+                                
+                                // 3. Si es combo, actualizar estadísticas del combo
+                                if (selectedProduct!!.isCombo && selectedProduct!!.comboId != null) {
+                                    val comboRef = db.collection("combos").document(selectedProduct!!.comboId.toString())
+                                    val comboDoc = comboRef.get().await()
+                                    val ventasCombo = comboDoc.getLong("vendidos")?.toInt() ?: 0
+                                    batch.update(comboRef, "vendidos", ventasCombo + 1)
+                                }
+                                
+                                batch.commit().await()
+                                
+                                // Actualizar UI
+                                showDialog = false
+                                selectedProduct = null
+                                
+                                // Mostrar mensaje de éxito
+                                error = null
+                                
+                            } catch (e: Exception) {
+                                Log.e("VenderProductoScreen", "Error registrando venta: ${e.message}")
+                                error = "Error al registrar la venta: ${e.message}"
+                            } finally {
+                                processingVenta = false
+                            }
+                        }
+                    },
+                    enabled = !processingVenta
+                ) {
+                    Text(if (processingVenta) "Procesando..." else "Confirmar Venta")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialog = false },
+                    enabled = !processingVenta
+                ) {
+                    Text("Cancelar")
+                }
             }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        when {
-            loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            error != null -> Text("Error: $error", color = Color.Red)
-            searchQuery.isBlank() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Ingrese un término de búsqueda") }
-            products.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No se encontraron productos con esa búsqueda.") }
-            else -> LazyColumn {
-                items(products) { product ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (product.image != null) {
-                            AsyncImage(
-                                model = product.image,
-                                contentDescription = "Imagen producto",
-                                modifier = Modifier.size(64.dp)
+        )
+    }
+
+    LaunchedEffect(searchQuery) {
+        loading = true
+        try {
+            val db = Firebase.firestore
+            val productsList = mutableListOf<ProductForSale>()
+            
+            // 1. Obtener productos normales
+            val productsQuery = if (searchQuery.isBlank()) {
+                db.collection("products").whereEqualTo("is_available", true)
+            } else {
+                db.collection("products")
+                    .whereEqualTo("is_available", true)
+                    .whereGreaterThanOrEqualTo("name", searchQuery)
+                    .whereLessThanOrEqualTo("name", searchQuery + '\uf8ff')
+            }
+            
+            val productsSnapshot = productsQuery.get().await()
+            for (doc in productsSnapshot.documents) {
+                val id = doc.getString("id") ?: doc.id
+                val name = doc.getString("name")
+                val images = doc.get("images") as? List<*>
+                val image = images?.firstOrNull() as? String
+                val brand = doc.getString("brand")
+                val categories = doc.get("categories") as? List<*>
+                val categoriesList = categories?.mapNotNull { it as? String }
+                val price = doc.getLong("price")?.toInt() ?: 0
+                val comboIds = doc.get("combo_ids") as? List<*>
+                
+                // Si el producto está en un combo, obtener el combo
+                if (!comboIds.isNullOrEmpty()) {
+                    for (comboId in comboIds) {
+                        val comboDoc = db.collection("combos")
+                            .document(comboId.toString())
+                            .get()
+                            .await()
+                        
+                        if (comboDoc.exists() && comboDoc.getBoolean("is_available") == true) {
+                            val comboIdInt = comboDoc.getLong("combo_id")?.toInt()
+                            val comboPrice = comboDoc.getLong("new_price")?.toInt() ?: 0
+                            
+                            productsList.add(
+                                ProductForSale(
+                                    id = id,
+                                    name = name,
+                                    image = image,
+                                    brand = brand,
+                                    categories = categoriesList,
+                                    price = comboPrice,
+                                    isCombo = true,
+                                    comboId = comboIdInt
+                                )
                             )
                         }
-                        Spacer(modifier = Modifier.size(16.dp))
-                        Text(text = product.name ?: "Sin nombre", color = Color.Black, modifier = Modifier.weight(1f))
-                        Button(onClick = {
-                            coroutineScope.launch {
-                                try {
-                                    val db = Firebase.firestore
-                                    db.collection("products").document(product.id).update("is_available", false).await()
-                                    products = products.filterNot { it.id == product.id }
-                                } catch (e: Exception) {
-                                    error = e.message
+                    }
+                }
+                
+                // Agregar el producto normal
+                productsList.add(
+                    ProductForSale(
+                        id = id,
+                        name = name,
+                        image = image,
+                        brand = brand,
+                        categories = categoriesList,
+                        price = price
+                    )
+                )
+            }
+            
+            products = productsList.sortedWith(
+                compareBy<ProductForSale> { !it.isCombo }
+                    .thenBy { it.name }
+            )
+            error = null
+        } catch (e: Exception) {
+            Log.e("VenderProductoScreen", "Error cargando productos: ${e.message}")
+            error = e.message
+        } finally {
+            loading = false
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Vender Producto",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Buscar por nombre") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+        
+        when {
+            loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            error != null -> {
+                Text(
+                    text = "Error: $error",
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            products.isEmpty() -> {
+                Text(
+                    text = if (searchQuery.isBlank()) {
+                        "No hay productos disponibles para vender"
+                    } else {
+                        "No se encontraron productos con ese nombre"
+                    },
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            else -> {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(products) { product ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedProduct = product
+                                    showDialog = true
                                 }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                product.image?.let { image ->
+                                    AsyncImage(
+                                        model = image,
+                                        contentDescription = "Producto",
+                                        modifier = Modifier.size(64.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                }
+                                
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = product.name ?: "Sin nombre",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (product.brand != null) {
+                                        Text(
+                                            text = product.brand,
+                                            fontSize = 14.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    if (product.categories?.isNotEmpty() == true) {
+                                        Text(
+                                            text = product.categories.joinToString(", "),
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                    if (product.isCombo) {
+                                        Text(
+                                            text = "Combo #${product.comboId}",
+                                            color = Color(0xFF1976D2),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                
+                                Text(
+                                    text = "$${product.price}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (product.isCombo) Color(0xFF388E3C) else Color.Black
+                                )
                             }
-                        }) {
-                            Text("Vendido")
                         }
                     }
                 }
             }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = onNavigateBack,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Volver")
         }
     }
 } 

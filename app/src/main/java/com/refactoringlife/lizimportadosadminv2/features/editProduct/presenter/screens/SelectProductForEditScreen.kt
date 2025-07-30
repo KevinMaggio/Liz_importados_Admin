@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
@@ -24,12 +25,12 @@ import kotlinx.coroutines.tasks.await
 import android.util.Log
 
 // Modelo ligero para la lista
- data class ProductLight(
+data class ProductLight(
     val id: String,
     val name: String?,
     val image: String?,
     val brand: String? = null,
-    val category: String? = null
+    val categories: List<String>? = null
 )
 
 @Composable
@@ -41,7 +42,7 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
     var searchField by remember { mutableStateOf("name") }
     val coroutineScope = rememberCoroutineScope()
     var debounceJob by remember { mutableStateOf<Job?>(null) }
-    val searchFields = listOf("name" to "Nombre", "brand" to "Marca", "category" to "Categoría")
+    val searchFields = listOf("name" to "Nombre", "brand" to "Marca", "categories" to "Categorías")
     var expanded by remember { mutableStateOf(false) }
 
     fun loadProducts(query: String, field: String) {
@@ -64,15 +65,16 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
                     val images = doc.get("images") as? List<*>
                     val image = images?.firstOrNull() as? String
                     val brand = doc.getString("brand")
-                    val category = doc.getString("category")
-                    ProductLight(id, name, image, brand, category)
+                    val categories = doc.get("categories") as? List<*>
+                    val categoriesList = categories?.mapNotNull { it as? String }
+                    ProductLight(id, name, image, brand, categoriesList)
                 }
                 
                 // Filtro contains insensible a mayúsculas - más flexible
                 products = allProducts.filter {
                     val value = when (field) {
                         "brand" -> it.brand ?: ""
-                        "category" -> it.category ?: ""
+                        "categories" -> it.categories?.joinToString(", ") ?: ""
                         else -> it.name ?: ""
                     }.lowercase()
                     value.contains(q)
@@ -164,7 +166,16 @@ fun SelectProductForEditScreen(onProductSelected: (String) -> Unit) {
                             )
                         }
                         Spacer(modifier = Modifier.size(16.dp))
-                        Text(text = product.name ?: "Sin nombre", color = Color.Black)
+                        Column {
+                            Text(text = product.name ?: "Sin nombre", color = Color.Black)
+                            if (product.categories?.isNotEmpty() == true) {
+                                Text(
+                                    text = "Categorías: ${product.categories.joinToString(", ")}",
+                                    color = Color.Gray,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
                     }
                 }
             }

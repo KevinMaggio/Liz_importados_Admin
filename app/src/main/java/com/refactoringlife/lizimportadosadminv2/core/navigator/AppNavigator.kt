@@ -17,6 +17,7 @@ import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.s
 import com.refactoringlife.lizimportadosadminv2.features.editProduct.presenter.screens.VenderProductoScreen
 import com.refactoringlife.lizimportadosadminv2.features.config.presenter.screens.ConfigAppScreen
 import com.refactoringlife.lizimportadosadminv2.features.login.presenter.viewmodel.LoginViewModel
+import com.refactoringlife.lizimportadosadminv2.features.home.presenter.viewmodel.HomeViewModel
 
 @Composable
 fun AppNavHost(
@@ -45,6 +46,7 @@ fun AppNavHost(
         
         composable(AppRoutes.HOME) {
             HomeScreen(
+                viewModel = HomeViewModel(),
                 onNavigateToAddProduct = { navController.navigate(AppRoutes.ADD_PRODUCT) },
                 onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
                 onNavigateToManageCombos = { navController.navigate(AppRoutes.MANAGE_COMBOS) },
@@ -59,7 +61,9 @@ fun AppNavHost(
         }
         
         composable(AppRoutes.ADD_PRODUCT) {
-            AddProductScreen()
+            AddProductScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(AppRoutes.CREATE_COMBO) {
@@ -74,7 +78,6 @@ fun AppNavHost(
         
         composable(AppRoutes.MANAGE_COMBOS) {
             ManageCombosScreen(
-                onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -113,7 +116,9 @@ fun AppNavHost(
         }
         
         composable(AppRoutes.VENDER_PRODUCTO) {
-            VenderProductoScreen()
+            VenderProductoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(AppRoutes.CONFIG_APP) {

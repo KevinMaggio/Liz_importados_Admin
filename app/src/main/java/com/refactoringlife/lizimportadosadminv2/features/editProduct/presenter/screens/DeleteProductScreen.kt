@@ -13,26 +13,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.refactoringlife.lizimportadosadminv2.core.dto.request.ProductRequest
+import com.refactoringlife.lizimportadosadminv2.core.dto.response.ProductResponse
+import com.refactoringlife.lizimportadosadminv2.core.repository.ProductRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @Composable
 fun DeleteProductScreen() {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var products by remember { mutableStateOf<List<ProductRequest>>(emptyList()) }
+    var products by remember { mutableStateOf<List<ProductResponse>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var searchField by remember { mutableStateOf("name") }
     val coroutineScope = rememberCoroutineScope()
     var debounceJob by remember { mutableStateOf<Job?>(null) }
-    val searchFields = listOf("name" to "Nombre", "brand" to "Marca", "category" to "Categoría")
+    val searchFields = listOf("name" to "Nombre", "brand" to "Marca", "categories" to "Categorías")
     var expanded by remember { mutableStateOf(false) }
+    
+    // Agregar ProductRepository
+    val productRepository = remember { ProductRepository() }
 
     fun loadProducts(query: String, field: String) {
         if (query.isBlank()) {
@@ -43,23 +43,15 @@ fun DeleteProductScreen() {
         loading = true
         coroutineScope.launch {
             try {
-                val db = Firebase.firestore
-                var ref: Query = db.collection("products").whereEqualTo("is_available", true)
-                val q = query.lowercase()
-                ref = ref
-                    .orderBy(field)
-                    .startAt(q)
-                    .endAt(q + "\uf8ff")
-                val snapshot = ref.get().await()
-                val allProducts = snapshot.documents.mapNotNull { it.toObject(ProductRequest::class.java) }
+                val allProducts = productRepository.searchProductsByName(query)
                 // Filtro contains insensible a mayúsculas
                 products = allProducts.filter {
                     val value = when (field) {
                         "brand" -> it.brand ?: ""
-                        "category" -> it.category ?: ""
+                        "categories" -> it.categories?.joinToString(", ") ?: ""
                         else -> it.name ?: ""
                     }.lowercase()
-                    value.contains(q)
+                    value.contains(query.lowercase())
                 }
                 error = null
             } catch (e: Exception) {
@@ -81,9 +73,12 @@ fun DeleteProductScreen() {
     fun deleteProduct(productId: String) {
         coroutineScope.launch {
             try {
-                val db = Firebase.firestore
-                db.collection("products").document(productId).delete().await()
-                products = products.filterNot { it.id == productId }
+                val result = productRepository.updateProduct(productId, mapOf("is_available" to false))
+                if (result.isSuccess) {
+                    products = products.filterNot { it.id == productId }
+                } else {
+                    error = result.exceptionOrNull()?.message
+                }
             } catch (e: Exception) {
                 error = e.message
             }
@@ -154,8 +149,20 @@ fun DeleteProductScreen() {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = product.name ?: "Sin nombre", color = Color.Black)
                             Text(text = product.description ?: "", color = Color.Gray, fontSize = 12.sp)
+                            if (product.categories?.isNotEmpty() == true) {
+                                Text(
+                                    text = product.categories.joinToString(", "),
+                                    color = Color.Gray,
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
-                        Button(onClick = { deleteProduct(product.id) }) {
+                        Button(
+                            onClick = { deleteProduct(product.id) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFEF5350)
+                            )
+                        ) {
                             Text("Eliminar")
                         }
                     }

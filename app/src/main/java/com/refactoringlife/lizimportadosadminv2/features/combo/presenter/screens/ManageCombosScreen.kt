@@ -3,10 +3,6 @@ package com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,112 +12,204 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.refactoringlife.lizimportadosadminv2.core.dto.request.ComboRequest
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import android.util.Log
 
-data class ComboListItem(
-    val comboId: Int,
+data class ComboWithProducts(
+    val id: Int,
     val oldPrice: Int,
     val newPrice: Int,
-    val product1Name: String,
-    val product2Name: String,
-    val isAvailable: Boolean
+    val isAvailable: Boolean,
+    val product1: ProductInCombo,
+    val product2: ProductInCombo
+)
+
+data class ProductInCombo(
+    val id: String,
+    val name: String,
+    val image: String?,
+    val price: Int
 )
 
 @Composable
 fun ManageCombosScreen(
-    onNavigateToCreateCombo: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    var combos by remember { mutableStateOf<List<ComboListItem>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var showDeleteDialog by remember { mutableStateOf<ComboListItem?>(null) }
-    
+    var combos by remember { mutableStateOf<List<ComboWithProducts>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
-    
-    // Cargar combos
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            try {
-                loading = true
-                val db = Firebase.firestore
-                val snapshot = db.collection("combos").get().await()
-                
-                val comboList = mutableListOf<ComboListItem>()
-                
-                for (doc in snapshot.documents) {
-                    try {
-                        val comboId = doc.getLong("comboId")?.toInt() ?: continue
-                        val oldPrice = doc.getLong("oldPrice")?.toInt() ?: 0
-                        val newPrice = doc.getLong("newPrice")?.toInt() ?: 0
-                        val product1Id = doc.getString("product1Id") ?: continue
-                        val product2Id = doc.getString("product2Id") ?: continue
-                        val isAvailable = doc.getBoolean("isAvailable") ?: true
-                        
-                        // Obtener nombres de productos
-                        val product1Doc = db.collection("products").document(product1Id).get().await()
-                        val product2Doc = db.collection("products").document(product2Id).get().await()
-                        
-                        val product1Name = product1Doc.getString("name") ?: "Producto no encontrado"
-                        val product2Name = product2Doc.getString("name") ?: "Producto no encontrado"
-                        
-                        comboList.add(
-                            ComboListItem(
-                                comboId = comboId,
-                                oldPrice = oldPrice,
-                                newPrice = newPrice,
-                                product1Name = product1Name,
-                                product2Name = product2Name,
-                                isAvailable = isAvailable
-                            )
-                        )
-                    } catch (e: Exception) {
-                        Log.e("ManageCombosScreen", "Error procesando combo: ${e.message}")
-                    }
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedCombo by remember { mutableStateOf<ComboWithProducts?>(null) }
+    var processingDeactivation by remember { mutableStateOf(false) }
+
+    // Dialog de confirmación
+    if (showDialog && selectedCombo != null) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirmar Desactivación") },
+            text = { 
+                Text(
+                    "¿Estás seguro que deseas desactivar el Combo #${selectedCombo?.id}?\n" +
+                    "Esta acción también:\n" +
+                    "• Desactivará los productos asociados\n" +
+                    "• Eliminará el ID del combo de los productos"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            processingDeactivation = true
+                            try {
+                                val db = Firebase.firestore
+                                
+                                // 1. Desactivar el combo
+                                db.collection("combos")
+                                    .document(selectedCombo!!.id.toString())
+                                    .update("is_available", false)
+                                    .await()
+                                
+                                // 2. Desactivar productos y eliminar comboId
+                                val batch = db.batch()
+                                
+                                // Producto 1
+                                val product1Ref = db.collection("products")
+                                    .document(selectedCombo!!.product1.id)
+                                val product1Doc = product1Ref.get().await()
+                                val comboIds1 = (product1Doc.get("combo_ids") as? List<String> ?: emptyList())
+                                    .filter { it != selectedCombo!!.id.toString() }
+                                batch.update(product1Ref, mapOf(
+                                    "is_available" to false,
+                                    "combo_ids" to comboIds1
+                                ))
+                                
+                                // Producto 2
+                                val product2Ref = db.collection("products")
+                                    .document(selectedCombo!!.product2.id)
+                                val product2Doc = product2Ref.get().await()
+                                val comboIds2 = (product2Doc.get("combo_ids") as? List<String> ?: emptyList())
+                                    .filter { it != selectedCombo!!.id.toString() }
+                                batch.update(product2Ref, mapOf(
+                                    "is_available" to false,
+                                    "combo_ids" to comboIds2
+                                ))
+                                
+                                batch.commit().await()
+                                
+                                // Actualizar la lista local
+                                combos = combos.map { combo ->
+                                    if (combo.id == selectedCombo!!.id) {
+                                        combo.copy(isAvailable = false)
+                                    } else {
+                                        combo
+                                    }
+                                }
+                                
+                                showDialog = false
+                                selectedCombo = null
+                                
+                            } catch (e: Exception) {
+                                Log.e("ManageCombosScreen", "Error desactivando combo: ${e.message}")
+                                error = "Error al desactivar el combo: ${e.message}"
+                            } finally {
+                                processingDeactivation = false
+                            }
+                        }
+                    },
+                    enabled = !processingDeactivation
+                ) {
+                    Text(if (processingDeactivation) "Procesando..." else "Confirmar")
                 }
-                
-                combos = comboList.sortedBy { it.comboId }
-                error = null
-            } catch (e: Exception) {
-                error = e.message
-                Log.e("ManageCombosScreen", "Error cargando combos: ${e.message}")
-            } finally {
-                loading = false
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialog = false },
+                    enabled = !processingDeactivation
+                ) {
+                    Text("Cancelar")
+                }
             }
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        loading = true
+        try {
+            val db = Firebase.firestore
+            val combosList = mutableListOf<ComboWithProducts>()
+            
+            // 1. Obtener todos los combos
+            val combosSnapshot = db.collection("combos").get().await()
+            
+            // 2. Para cada combo, obtener sus productos
+            for (comboDoc in combosSnapshot.documents) {
+                try {
+                    val comboId = comboDoc.getLong("combo_id")?.toInt() ?: continue
+                    val oldPrice = comboDoc.getLong("old_price")?.toInt() ?: 0
+                    val newPrice = comboDoc.getLong("new_price")?.toInt() ?: 0
+                    val isAvailable = comboDoc.getBoolean("is_available") ?: false
+                    val product1Id = comboDoc.getString("product1_id") ?: continue
+                    val product2Id = comboDoc.getString("product2_id") ?: continue
+                    
+                    // Obtener producto 1
+                    val product1Doc = db.collection("products").document(product1Id).get().await()
+                    val product1 = ProductInCombo(
+                        id = product1Id,
+                        name = product1Doc.getString("name") ?: "",
+                        image = (product1Doc.get("images") as? List<*>)?.firstOrNull() as? String,
+                        price = product1Doc.getLong("price")?.toInt() ?: 0
+                    )
+                    
+                    // Obtener producto 2
+                    val product2Doc = db.collection("products").document(product2Id).get().await()
+                    val product2 = ProductInCombo(
+                        id = product2Id,
+                        name = product2Doc.getString("name") ?: "",
+                        image = (product2Doc.get("images") as? List<*>)?.firstOrNull() as? String,
+                        price = product2Doc.getLong("price")?.toInt() ?: 0
+                    )
+                    
+                    combosList.add(
+                        ComboWithProducts(
+                            id = comboId,
+                            oldPrice = oldPrice,
+                            newPrice = newPrice,
+                            isAvailable = isAvailable,
+                            product1 = product1,
+                            product2 = product2
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e("ManageCombosScreen", "Error procesando combo: ${e.message}")
+                    continue
+                }
+            }
+            
+            combos = combosList.sortedByDescending { it.id }
+            error = null
+        } catch (e: Exception) {
+            Log.e("ManageCombosScreen", "Error cargando combos: ${e.message}")
+            error = e.message
+        } finally {
+            loading = false
         }
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Título y botón crear
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Gestionar Combos",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Button(
-                onClick = onNavigateToCreateCombo
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Crear Combo")
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Gestionar Combos",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
         
         when {
             loading -> {
@@ -140,57 +228,151 @@ fun ManageCombosScreen(
                 )
             }
             combos.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No hay combos creados")
-                }
+                Text(
+                    text = "No hay combos disponibles",
+                    modifier = Modifier.padding(16.dp)
+                )
             }
             else -> {
-                LazyColumn {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     items(combos) { combo ->
                         Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (combo.isAvailable) {
+                                    MaterialTheme.colorScheme.surface
+                                } else {
+                                    Color(0xFFEEEEEE)
+                                }
+                            )
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Combo #${combo.id}",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (!combo.isAvailable) {
                                         Text(
-                                            text = "Combo #${combo.comboId}",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 18.sp
+                                            text = "Inactivo",
+                                            color = Color.Red,
+                                            fontSize = 14.sp
                                         )
-                                        Text("${combo.product1Name} + ${combo.product2Name}")
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // Producto 1
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    combo.product1.image?.let { image ->
+                                        AsyncImage(
+                                            model = image,
+                                            contentDescription = "Producto 1",
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+                                    Column {
+                                        Text(text = combo.product1.name)
                                         Text(
-                                            text = "Precio original: $${combo.oldPrice} → Combo: $${combo.newPrice}",
+                                            text = "$${combo.product1.price}",
+                                            color = Color.Gray,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                                
+                                Text(
+                                    text = "+",
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                
+                                // Producto 2
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    combo.product2.image?.let { image ->
+                                        AsyncImage(
+                                            model = image,
+                                            contentDescription = "Producto 2",
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+                                    Column {
+                                        Text(text = combo.product2.name)
+                                        Text(
+                                            text = "$${combo.product2.price}",
+                                            color = Color.Gray,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                                
+                                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                                
+                                // Precios
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Precio Original",
+                                            fontSize = 12.sp,
                                             color = Color.Gray
                                         )
-                                        if (!combo.isAvailable) {
-                                            Text(
-                                                text = "❌ NO DISPONIBLE",
-                                                color = Color.Red,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
+                                        Text(
+                                            text = "$${combo.oldPrice}",
+                                            fontSize = 16.sp,
+                                            textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                        )
                                     }
-                                    
-                                    if (combo.isAvailable) {
-                                        IconButton(
-                                            onClick = { showDeleteDialog = combo }
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = "Dar de baja",
-                                                tint = Color.Red
-                                            )
-                                        }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text(
+                                            text = "Precio Combo",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                        Text(
+                                            text = "$${combo.newPrice}",
+                                            fontSize = 16.sp,
+                                            color = Color(0xFF388E3C)
+                                        )
+                                    }
+                                }
+                                
+                                if (combo.isAvailable) {
+                                    Button(
+                                        onClick = {
+                                            selectedCombo = combo
+                                            showDialog = true
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFFEF5350)
+                                        )
+                                    ) {
+                                        Text("Desactivar Combo")
                                     }
                                 }
                             }
@@ -199,107 +381,14 @@ fun ManageCombosScreen(
                 }
             }
         }
-    }
-    
-    // Dialog de confirmación para dar de baja
-    showDeleteDialog?.let { combo ->
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = null },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = Color.Red
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Dar de baja Combo #${combo.comboId}")
-                }
-            },
-            text = {
-                Text(
-                    "¿Estás seguro de que quieres dar de baja este combo?\n\n" +
-                    "Esta acción:\n" +
-                    "• Marcará el combo como no disponible\n" +
-                    "• Removerá el combo de los productos involucrados\n" +
-                    "• No se puede deshacer"
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            try {
-                                val db = Firebase.firestore
-                                
-                                // Marcar combo como no disponible
-                                db.collection("combos")
-                                    .document(combo.comboId.toString())
-                                    .update("isAvailable", false)
-                                    .await()
-                                
-                                // Remover comboId de los productos
-                                val snapshot = db.collection("products").get().await()
-                                for (doc in snapshot.documents) {
-                                    val comboIds = doc.get("combo_ids") as? List<String> ?: emptyList()
-                                    if (comboIds.contains(combo.comboId.toString())) {
-                                        val newComboIds = comboIds.filter { it != combo.comboId.toString() }
-                                        doc.reference.update("combo_ids", newComboIds).await()
-                                    }
-                                }
-                                
-                                // Recargar combos
-                                val newSnapshot = db.collection("combos").get().await()
-                                val comboList = mutableListOf<ComboListItem>()
-                                
-                                for (doc in newSnapshot.documents) {
-                                    try {
-                                        val comboId = doc.getLong("comboId")?.toInt() ?: continue
-                                        val oldPrice = doc.getLong("oldPrice")?.toInt() ?: 0
-                                        val newPrice = doc.getLong("newPrice")?.toInt() ?: 0
-                                        val product1Id = doc.getString("product1Id") ?: continue
-                                        val product2Id = doc.getString("product2Id") ?: continue
-                                        val isAvailable = doc.getBoolean("isAvailable") ?: true
-                                        
-                                        val product1Doc = db.collection("products").document(product1Id).get().await()
-                                        val product2Doc = db.collection("products").document(product2Id).get().await()
-                                        
-                                        val product1Name = product1Doc.getString("name") ?: "Producto no encontrado"
-                                        val product2Name = product2Doc.getString("name") ?: "Producto no encontrado"
-                                        
-                                        comboList.add(
-                                            ComboListItem(
-                                                comboId = comboId,
-                                                oldPrice = oldPrice,
-                                                newPrice = newPrice,
-                                                product1Name = product1Name,
-                                                product2Name = product2Name,
-                                                isAvailable = isAvailable
-                                            )
-                                        )
-                                    } catch (e: Exception) {
-                                        Log.e("ManageCombosScreen", "Error procesando combo: ${e.message}")
-                                    }
-                                }
-                                
-                                combos = comboList.sortedBy { it.comboId }
-                                showDeleteDialog = null
-                            } catch (e: Exception) {
-                                error = e.message
-                                Log.e("ManageCombosScreen", "Error dando de baja combo: ${e.message}")
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                ) {
-                    Text("Dar de baja")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = null }) {
-                    Text("Cancelar")
-                }
-            }
-        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = onNavigateBack,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Volver")
+        }
     }
 } 
