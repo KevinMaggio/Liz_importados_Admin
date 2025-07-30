@@ -144,19 +144,42 @@ fun ManageCombosScreen(
             
             // 1. Obtener todos los combos
             val combosSnapshot = db.collection("combos").get().await()
+            Log.d("ManageCombosScreen", "Combos encontrados: ${combosSnapshot.documents.size}")
             
             // 2. Para cada combo, obtener sus productos
             for (comboDoc in combosSnapshot.documents) {
                 try {
-                    val comboId = comboDoc.getLong("combo_id")?.toInt() ?: continue
-                    val oldPrice = comboDoc.getLong("old_price")?.toInt() ?: 0
-                    val newPrice = comboDoc.getLong("new_price")?.toInt() ?: 0
-                    val isAvailable = comboDoc.getBoolean("is_available") ?: false
-                    val product1Id = comboDoc.getString("product1_id") ?: continue
-                    val product2Id = comboDoc.getString("product2_id") ?: continue
+                    Log.d("ManageCombosScreen", "=== PROCESANDO COMBO: ${comboDoc.id} ===")
+                    Log.d("ManageCombosScreen", "Campos disponibles: ${comboDoc.data?.keys}")
+                    // Obtener comboId como número
+                    val comboIdNumber = comboDoc.getLong("comboId")
+                    if (comboIdNumber == null) {
+                        Log.e("ManageCombosScreen", "comboId es null para combo: ${comboDoc.id}")
+                        continue
+                    }
+                    val comboId = comboIdNumber.toInt()
+                    Log.d("ManageCombosScreen", "comboId encontrado: $comboId")
+                    val oldPrice = comboDoc.getLong("oldPrice")?.toInt() ?: 0
+                    val newPrice = comboDoc.getLong("newPrice")?.toInt() ?: 0
+                    val isAvailable = comboDoc.getBoolean("available") ?: false
+                    val product1Id = comboDoc.getString("product1Id")
+                    if (product1Id == null) {
+                        Log.e("ManageCombosScreen", "product1Id es null para combo: ${comboDoc.id}")
+                        continue
+                    }
+                    val product2Id = comboDoc.getString("product2Id")
+                    if (product2Id == null) {
+                        Log.e("ManageCombosScreen", "product2Id es null para combo: ${comboDoc.id}")
+                        continue
+                    }
                     
                     // Obtener producto 1
+                    Log.d("ManageCombosScreen", "Buscando producto 1: $product1Id")
                     val product1Doc = db.collection("products").document(product1Id).get().await()
+                    if (!product1Doc.exists()) {
+                        Log.e("ManageCombosScreen", "Producto 1 no encontrado: $product1Id")
+                        continue
+                    }
                     val product1 = ProductInCombo(
                         id = product1Id,
                         name = product1Doc.getString("name") ?: "",
@@ -165,7 +188,12 @@ fun ManageCombosScreen(
                     )
                     
                     // Obtener producto 2
+                    Log.d("ManageCombosScreen", "Buscando producto 2: $product2Id")
                     val product2Doc = db.collection("products").document(product2Id).get().await()
+                    if (!product2Doc.exists()) {
+                        Log.e("ManageCombosScreen", "Producto 2 no encontrado: $product2Id")
+                        continue
+                    }
                     val product2 = ProductInCombo(
                         id = product2Id,
                         name = product2Doc.getString("name") ?: "",
@@ -183,12 +211,14 @@ fun ManageCombosScreen(
                             product2 = product2
                         )
                     )
+                    Log.d("ManageCombosScreen", "✅ Combo agregado exitosamente: $comboId")
                 } catch (e: Exception) {
                     Log.e("ManageCombosScreen", "Error procesando combo: ${e.message}")
                     continue
                 }
             }
             
+            Log.d("ManageCombosScreen", "Combos procesados exitosamente: ${combosList.size}")
             combos = combosList.sortedByDescending { it.id }
             error = null
         } catch (e: Exception) {

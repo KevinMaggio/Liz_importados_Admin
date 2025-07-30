@@ -56,10 +56,15 @@ object FireStoreStats {
         val snapshot = db.collection("combos").get().await()
         var activos = 0
         var vendidos = 0
+        android.util.Log.d("FireStoreStats", "Total de combos en BD: ${snapshot.documents.size}")
         for (doc in snapshot.documents) {
-            if (doc.getBoolean("is_available") == true) activos++ // Corregido: usar is_available en lugar de activo
-            vendidos += doc.getLong("vendidos")?.toInt() ?: 0
+            val isAvailable = doc.getBoolean("available")
+            val vendidosCount = doc.getLong("vendidos")?.toInt() ?: 0
+            android.util.Log.d("FireStoreStats", "Combo ${doc.id}: available=$isAvailable, vendidos=$vendidosCount")
+            if (isAvailable == true) activos++
+            vendidos += vendidosCount
         }
+        android.util.Log.d("FireStoreStats", "Métricas finales: activos=$activos, vendidos=$vendidos")
         return activos to vendidos
     }
 
