@@ -24,6 +24,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import com.refactoringlife.lizimportadosadminv2.core.repository.ProductRepository
 
 @Composable
 fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
@@ -105,12 +106,13 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
         }
     }
 
+    // Agregar ProductRepository
+    val productRepository = remember { ProductRepository() }
+
     LaunchedEffect(productId) {
         loading = true
         try {
-            val db = Firebase.firestore
-            val doc = db.collection("products").document(productId).get().await()
-            val prod = doc.toObject(ProductResponse::class.java)
+            val prod = productRepository.getProduct(productId)
             if (prod != null) {
                 product = prod
                 original = prod.copy()
@@ -332,10 +334,14 @@ fun EditProductDetailScreen(productId: String, onBack: () -> Unit) {
                     
                     if (cambios.isNotEmpty()) {
                         try {
-                            val db = Firebase.firestore
-                            db.collection("products").document(productId).update(cambios).await()
-                            dialogMessage = "¡Producto actualizado exitosamente!"
-                            dialogIsError = false
+                            val result = productRepository.updateProduct(productId, cambios)
+                            if (result.isSuccess) {
+                                dialogMessage = "¡Producto actualizado exitosamente!"
+                                dialogIsError = false
+                            } else {
+                                dialogMessage = "Error al actualizar: ${result.exceptionOrNull()?.message}"
+                                dialogIsError = true
+                            }
                         } catch (e: Exception) {
                             dialogMessage = "Error al actualizar: ${e.message}"
                             dialogIsError = true

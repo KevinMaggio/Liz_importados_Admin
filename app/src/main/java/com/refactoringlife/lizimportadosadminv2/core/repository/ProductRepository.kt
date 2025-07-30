@@ -3,6 +3,8 @@ package com.refactoringlife.lizimportadosadminv2.core.repository
 import android.util.Log
 import com.refactoringlife.lizimportadosadminv2.core.dto.request.ProductRequest
 import com.refactoringlife.lizimportadosadminv2.core.dto.response.ProductResponse
+import com.refactoringlife.lizimportadosadminv2.core.utils.toFirestoreMap
+import com.refactoringlife.lizimportadosadminv2.core.utils.toProductResponse
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
@@ -19,14 +21,7 @@ class ProductRepository {
         Log.d(TAG, "🔄 Iniciando obtención de productos desde Firestore")
         return try {
             val snapshot = db.collection("products").get().await()
-            snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(ProductResponse::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ Error convirtiendo documento a ProductResponse: ${e.message}")
-                    null
-                }
-            }
+            snapshot.documents.mapNotNull { doc -> doc.toProductResponse() }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error obteniendo productos: ${e.message}")
             emptyList()
@@ -38,7 +33,7 @@ class ProductRepository {
         Log.d(TAG, "🔄 Obteniendo producto con ID: $productId")
         return try {
             val doc = db.collection("products").document(productId).get().await()
-            doc.toObject(ProductResponse::class.java)
+            doc.toProductResponse()
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error obteniendo producto $productId: ${e.message}")
             null
@@ -49,24 +44,10 @@ class ProductRepository {
     suspend fun addProduct(product: ProductRequest): Result<Unit> {
         Log.d(TAG, "➕ Agregando nuevo producto: ${product.name}")
         return try {
-            // Convertir el producto a Map para asegurar que los campos se guarden correctamente
-            val productMap = mapOf(
-                "id" to product.id,
-                "name" to product.name,
-                "description" to product.description,
-                "brand" to product.brand,
-                "size" to product.size,
-                "categories" to (product.categories ?: emptyList()),
-                "combo_ids" to (product.comboIds ?: emptyList()),
-                "gender" to product.gender,
-                "images" to product.images,
-                "is_available" to true, // Mapeo manual para evitar problemas con Firestore
-                "is_offer" to false, // Mapeo manual para evitar problemas con Firestore
-                "offer_price" to 0,
-                "price" to product.price,
-                "vendidos" to 0 // Inicializar contador de ventas
-            )
-            db.collection("products").document(product.id).set(productMap).await()
+            db.collection("products")
+                .document(product.id)
+                .set(product.toFirestoreMap())
+                .await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error agregando producto: ${e.message}")
@@ -78,7 +59,10 @@ class ProductRepository {
     suspend fun updateProduct(productId: String, updates: Map<String, Any>): Result<Unit> {
         Log.d(TAG, "✏️ Actualizando producto con ID: $productId")
         return try {
-            db.collection("products").document(productId).update(updates).await()
+            db.collection("products")
+                .document(productId)
+                .update(updates)
+                .await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error actualizando producto: ${e.message}")
@@ -104,14 +88,7 @@ class ProductRepository {
                     .await()
             }
             
-            snapshot.documents.mapNotNull { doc ->
-                try {
-                    doc.toObject(ProductResponse::class.java)
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ Error convirtiendo documento a ProductResponse: ${e.message}")
-                    null
-                }
-            }
+            snapshot.documents.mapNotNull { doc -> doc.toProductResponse() }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error buscando productos: ${e.message}")
             emptyList()
