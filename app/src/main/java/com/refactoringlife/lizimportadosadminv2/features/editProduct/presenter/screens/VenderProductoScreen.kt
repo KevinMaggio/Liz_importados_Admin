@@ -77,6 +77,11 @@ fun VenderProductoScreen(
                                 val db = Firebase.firestore
                                 val batch = db.batch()
                                 
+                                // Validar que el producto seleccionado existe
+                                if (selectedProduct == null) {
+                                    throw Exception("No hay producto seleccionado")
+                                }
+                                
                                 // 1. Registrar la venta
                                 val ventaRef = db.collection("ventas").document()
                                 val ventaData = mapOf(
@@ -91,6 +96,11 @@ fun VenderProductoScreen(
                                 // 2. Actualizar estadísticas del producto y marcar como no disponible
                                 val productRef = db.collection("products").document(selectedProduct!!.id)
                                 val productDoc = productRef.get().await()
+                                
+                                if (!productDoc.exists()) {
+                                    throw Exception("El producto no existe en la base de datos")
+                                }
+                                
                                 val ventasActuales = productDoc.getLong("vendidos")?.toInt() ?: 0
                                 batch.update(productRef, mapOf(
                                     "vendidos" to (ventasActuales + 1),
@@ -100,23 +110,32 @@ fun VenderProductoScreen(
                                 // 3. Si es combo, actualizar estadísticas del combo
                                 if (selectedProduct!!.isCombo && selectedProduct!!.comboId != null) {
                                     val comboRef = db.collection("combos").document(selectedProduct!!.comboId.toString())
-                                    batch.update(comboRef, "is_available", false)
+                                    val comboDoc = comboRef.get().await()
+                                    
+                                    if (!comboDoc.exists()) {
+                                        throw Exception("El combo no existe en la base de datos")
+                                    }
+                                    
+                                    batch.update(comboRef, mapOf(
+                                        "is_available" to false
+                                    ))
                                 }
                                 
                                 batch.commit().await()
                                 
                                 // Actualizar UI
                                 showDialog = false
-                                selectedProduct = null
                                 // Remover el producto vendido de la lista
-                                products = products.filterNot { it.id == selectedProduct!!.id }
+                                val soldProductId = selectedProduct!!.id
+                                products = products.filterNot { it.id == soldProductId }
+                                selectedProduct = null
                                 
                                 // Mostrar mensaje de éxito
                                 error = null
                                 
                             } catch (e: Exception) {
-                                Log.e("VenderProductoScreen", "Error registrando venta: ${e.message}")
-                                error = "Error al registrar la venta: ${e.message}"
+                                Log.e("VenderProductoScreen", "Error registrando venta", e)
+                                error = "Error al registrar la venta: ${e.message ?: e.toString()}"
                             } finally {
                                 processingVenta = false
                             }
@@ -145,19 +164,17 @@ fun VenderProductoScreen(
             val productsList = mutableListOf<ProductForSale>()
             
             // 1. Obtener productos normales
-            val productsQuery = if (searchQuery.isBlank()) {
-                db.collection("products").whereEqualTo("is_available", true)
-            } else {
-                db.collection("products")
-                    .whereEqualTo("is_available", true)
-                    .whereGreaterThanOrEqualTo("name", searchQuery)
-                    .whereLessThanOrEqualTo("name", searchQuery + '\uf8ff')
-            }
+            val productsQuery = db.collection("products").whereEqualTo("is_available", true)
             
             val productsSnapshot = productsQuery.get().await()
             for (doc in productsSnapshot.documents) {
+                val name = doc.getString("name") ?: ""
+                
+                // Filtrar por nombre si hay búsqueda
+                if (searchQuery.isNotBlank() && !name.contains(searchQuery, ignoreCase = true)) {
+                    continue
+                }
                 val id = doc.getString("id") ?: doc.id
-                val name = doc.getString("name")
                 val images = doc.get("images") as? List<*>
                 val image = images?.firstOrNull() as? String
                 val brand = doc.getString("brand")
