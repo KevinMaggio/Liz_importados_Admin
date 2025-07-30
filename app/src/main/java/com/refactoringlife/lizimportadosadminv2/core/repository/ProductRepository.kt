@@ -95,6 +95,29 @@ class ProductRepository {
         }
     }
     
+    // Buscar todos los productos sin filtro de disponibilidad
+    suspend fun searchAllProducts(query: String): List<ProductResponse> {
+        Log.d(TAG, "🔍 Buscando todos los productos con nombre: $query")
+        return try {
+            val snapshot = if (query.isBlank()) {
+                db.collection("products")
+                    .get()
+                    .await()
+            } else {
+                db.collection("products")
+                    .whereGreaterThanOrEqualTo("name", query)
+                    .whereLessThanOrEqualTo("name", query + '\uf8ff')
+                    .get()
+                    .await()
+            }
+            
+            snapshot.documents.mapNotNull { doc -> doc.toProductResponse() }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error buscando productos: ${e.message}")
+            emptyList()
+        }
+    }
+    
     // Incrementar contador de ventas
     suspend fun incrementVentas(productId: String): Result<Unit> {
         Log.d(TAG, "📈 Incrementando ventas para producto: $productId")

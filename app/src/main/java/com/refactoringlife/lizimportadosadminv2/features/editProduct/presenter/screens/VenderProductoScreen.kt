@@ -88,18 +88,19 @@ fun VenderProductoScreen(
                                 )
                                 batch.set(ventaRef, ventaData)
                                 
-                                // 2. Actualizar estadísticas del producto
+                                // 2. Actualizar estadísticas del producto y marcar como no disponible
                                 val productRef = db.collection("products").document(selectedProduct!!.id)
                                 val productDoc = productRef.get().await()
                                 val ventasActuales = productDoc.getLong("vendidos")?.toInt() ?: 0
-                                batch.update(productRef, "vendidos", ventasActuales + 1)
+                                batch.update(productRef, mapOf(
+                                    "vendidos" to (ventasActuales + 1),
+                                    "is_available" to false
+                                ))
                                 
                                 // 3. Si es combo, actualizar estadísticas del combo
                                 if (selectedProduct!!.isCombo && selectedProduct!!.comboId != null) {
                                     val comboRef = db.collection("combos").document(selectedProduct!!.comboId.toString())
-                                    val comboDoc = comboRef.get().await()
-                                    val ventasCombo = comboDoc.getLong("vendidos")?.toInt() ?: 0
-                                    batch.update(comboRef, "vendidos", ventasCombo + 1)
+                                    batch.update(comboRef, "is_available", false)
                                 }
                                 
                                 batch.commit().await()
@@ -107,6 +108,8 @@ fun VenderProductoScreen(
                                 // Actualizar UI
                                 showDialog = false
                                 selectedProduct = null
+                                // Remover el producto vendido de la lista
+                                products = products.filterNot { it.id == selectedProduct!!.id }
                                 
                                 // Mostrar mensaje de éxito
                                 error = null

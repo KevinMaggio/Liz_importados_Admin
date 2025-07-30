@@ -55,11 +55,9 @@ object ProductConstants {
     )
     
     val GENDERS = listOf(
-        "Masculino",
-        "Femenino",
-        "Unisex",
+        "Hombre",
+        "Mujer",
         "Niño",
-        "Niña"
     )
     
     fun getValueOrEmpty(value: String?): String {

@@ -43,7 +43,7 @@ fun DeleteProductScreen() {
         loading = true
         coroutineScope.launch {
             try {
-                val allProducts = productRepository.searchProductsByName(query)
+                val allProducts = productRepository.searchAllProducts(query)
                 // Filtro contains insensible a mayúsculas
                 products = allProducts.filter {
                     val value = when (field) {
