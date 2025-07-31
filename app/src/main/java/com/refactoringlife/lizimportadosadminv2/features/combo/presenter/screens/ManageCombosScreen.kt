@@ -50,13 +50,14 @@ fun ManageCombosScreen(
     if (showDialog && selectedCombo != null) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Confirmar Desactivación") },
+            title = { Text("Confirmar Eliminación") },
             text = { 
                 Text(
-                    "¿Estás seguro que deseas desactivar el Combo #${selectedCombo?.id}?\n" +
+                    "¿Estás seguro que deseas eliminar completamente el Combo #${selectedCombo?.id}?\n" +
                     "Esta acción también:\n" +
                     "• Desactivará los productos asociados\n" +
-                    "• Eliminará el ID del combo de los productos"
+                    "• Eliminará el ID del combo de los productos\n" +
+                    "• Eliminará permanentemente el combo de la base de datos"
                 )
             },
             confirmButton = {
@@ -67,54 +68,68 @@ fun ManageCombosScreen(
                             try {
                                 val db = Firebase.firestore
                                 
-                                // 1. Desactivar el combo
-                                db.collection("combos")
-                                    .document(selectedCombo!!.id.toString())
-                                    .update("is_available", false)
+                                // 1. Eliminar el combo completamente
+                                val comboQuery = db.collection("combos")
+                                    .whereEqualTo("comboId", selectedCombo!!.id)
+                                    .get()
                                     .await()
+                                
+                                if (comboQuery.documents.isNotEmpty()) {
+                                    val comboDoc = comboQuery.documents.first()
+                                    comboDoc.reference.delete().await()
+                                    Log.d("ManageCombosScreen", "Combo eliminado: ${selectedCombo!!.id}")
+                                } else {
+                                    Log.e("ManageCombosScreen", "No se encontró el documento del combo: ${selectedCombo!!.id}")
+                                }
                                 
                                 // 2. Desactivar productos y eliminar comboId
                                 val batch = db.batch()
                                 
                                 // Producto 1
+                                Log.d("ManageCombosScreen", "Actualizando producto 1: ${selectedCombo!!.product1.id}")
                                 val product1Ref = db.collection("products")
                                     .document(selectedCombo!!.product1.id)
                                 val product1Doc = product1Ref.get().await()
-                                val comboIds1 = (product1Doc.get("combo_ids") as? List<String> ?: emptyList())
-                                    .filter { it != selectedCombo!!.id.toString() }
-                                batch.update(product1Ref, mapOf(
-                                    "is_available" to false,
-                                    "combo_ids" to comboIds1
-                                ))
+                                if (product1Doc.exists()) {
+                                    val comboIds1 = (product1Doc.get("combo_ids") as? List<String> ?: emptyList())
+                                        .filter { it != selectedCombo!!.id.toString() }
+                                    Log.d("ManageCombosScreen", "Combo IDs del producto 1: $comboIds1")
+                                    batch.update(product1Ref, mapOf(
+                                        "is_available" to false,
+                                        "combo_ids" to comboIds1
+                                    ))
+                                } else {
+                                    Log.e("ManageCombosScreen", "Producto 1 no encontrado: ${selectedCombo!!.product1.id}")
+                                }
                                 
                                 // Producto 2
+                                Log.d("ManageCombosScreen", "Actualizando producto 2: ${selectedCombo!!.product2.id}")
                                 val product2Ref = db.collection("products")
                                     .document(selectedCombo!!.product2.id)
                                 val product2Doc = product2Ref.get().await()
-                                val comboIds2 = (product2Doc.get("combo_ids") as? List<String> ?: emptyList())
-                                    .filter { it != selectedCombo!!.id.toString() }
-                                batch.update(product2Ref, mapOf(
-                                    "is_available" to false,
-                                    "combo_ids" to comboIds2
-                                ))
+                                if (product2Doc.exists()) {
+                                    val comboIds2 = (product2Doc.get("combo_ids") as? List<String> ?: emptyList())
+                                        .filter { it != selectedCombo!!.id.toString() }
+                                    Log.d("ManageCombosScreen", "Combo IDs del producto 2: $comboIds2")
+                                    batch.update(product2Ref, mapOf(
+                                        "is_available" to false,
+                                        "combo_ids" to comboIds2
+                                    ))
+                                } else {
+                                    Log.e("ManageCombosScreen", "Producto 2 no encontrado: ${selectedCombo!!.product2.id}")
+                                }
                                 
                                 batch.commit().await()
                                 
-                                // Actualizar la lista local
-                                combos = combos.map { combo ->
-                                    if (combo.id == selectedCombo!!.id) {
-                                        combo.copy(isAvailable = false)
-                                    } else {
-                                        combo
-                                    }
-                                }
+                                // Actualizar la lista local - eliminar el combo de la lista
+                                combos = combos.filter { combo -> combo.id != selectedCombo!!.id }
                                 
                                 showDialog = false
                                 selectedCombo = null
                                 
                             } catch (e: Exception) {
-                                Log.e("ManageCombosScreen", "Error desactivando combo: ${e.message}")
-                                error = "Error al desactivar el combo: ${e.message}"
+                                Log.e("ManageCombosScreen", "Error eliminando combo: ${e.message}")
+                                error = "Error al eliminar el combo: ${e.message}"
                             } finally {
                                 processingDeactivation = false
                             }
