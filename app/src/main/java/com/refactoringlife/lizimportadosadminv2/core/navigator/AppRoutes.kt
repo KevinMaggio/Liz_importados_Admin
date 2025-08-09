@@ -1,6 +1,8 @@
 package com.refactoringlife.lizimportadosadminv2.core.navigator
 
 object AppRoutes {
+    const val CARTS = "carts"
+    const val CART_DETAIL = "cart_detail"
     const val LOGIN = "login"
     const val HOME = "home"
     const val ADD_PRODUCT = "add_product"

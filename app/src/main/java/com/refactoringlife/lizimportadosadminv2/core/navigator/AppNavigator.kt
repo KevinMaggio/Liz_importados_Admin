@@ -1,12 +1,17 @@
 package com.refactoringlife.lizimportadosadminv2.core.navigator
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 import com.refactoringlife.lizimportadosadminv2.features.login.presenter.screens.LoginScreen
 import com.refactoringlife.lizimportadosadminv2.features.home.presenter.screens.HomeScreen
 import com.refactoringlife.lizimportadosadminv2.features.addProduct.presenter.screens.AddProductScreen
+import com.refactoringlife.lizimportadosadminv2.features.carts.presenter.screens.CartDetailScreen
+import com.refactoringlife.lizimportadosadminv2.features.carts.presenter.screens.CartsScreen
 import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.CreateComboScreen
 import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.ManageCombosScreen
 import com.refactoringlife.lizimportadosadminv2.features.combo.presenter.screens.SelectProductForComboScreen
@@ -19,6 +24,7 @@ import com.refactoringlife.lizimportadosadminv2.features.config.presenter.screen
 import com.refactoringlife.lizimportadosadminv2.features.login.presenter.viewmodel.LoginViewModel
 import com.refactoringlife.lizimportadosadminv2.features.home.presenter.viewmodel.HomeViewModel
 
+@SuppressLint("ViewModelConstructorInComposable")
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -44,21 +50,43 @@ fun AppNavHost(
             )
         }
         
-        composable(AppRoutes.HOME) {
-            HomeScreen(
-                viewModel = HomeViewModel(),
-                onNavigateToAddProduct = { navController.navigate(AppRoutes.ADD_PRODUCT) },
-                onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
-                onNavigateToManageCombos = { navController.navigate(AppRoutes.MANAGE_COMBOS) },
-                onNavigateToSelectProductForEdit = { navController.navigate(AppRoutes.SELECT_PRODUCT_FOR_EDIT) },
-                onNavigateToEditProductDetail = { productId -> 
-                    navController.navigate("${AppRoutes.EDIT_PRODUCT_DETAIL}/$productId")
-                },
-                onNavigateToDeleteProduct = { navController.navigate(AppRoutes.DELETE_PRODUCT) },
-                onNavigateToVenderProducto = { navController.navigate(AppRoutes.VENDER_PRODUCTO) },
-                onNavigateToConfigApp = { navController.navigate(AppRoutes.CONFIG_APP) }
-            )
-        }
+                        composable(AppRoutes.HOME) {
+                    HomeScreen(
+                        viewModel = HomeViewModel(),
+                        onNavigateToCarts = { navController.navigate(AppRoutes.CARTS) },
+                        onNavigateToAddProduct = { navController.navigate(AppRoutes.ADD_PRODUCT) },
+                        onNavigateToCreateCombo = { navController.navigate(AppRoutes.CREATE_COMBO) },
+                        onNavigateToManageCombos = { navController.navigate(AppRoutes.MANAGE_COMBOS) },
+                        onNavigateToSelectProductForEdit = { navController.navigate(AppRoutes.SELECT_PRODUCT_FOR_EDIT) },
+                        onNavigateToEditProductDetail = { productId ->
+                            navController.navigate("${AppRoutes.EDIT_PRODUCT_DETAIL}/$productId")
+                        },
+                        onNavigateToDeleteProduct = { navController.navigate(AppRoutes.DELETE_PRODUCT) },
+                        onNavigateToVenderProducto = { navController.navigate(AppRoutes.VENDER_PRODUCTO) },
+                        onNavigateToConfigApp = { navController.navigate(AppRoutes.CONFIG_APP) }
+                    )
+                }
+
+                // Rutas de Carritos
+                composable(AppRoutes.CARTS) {
+                    CartsScreen(
+                        onNavigateToCartDetail = { email ->
+                            navController.navigate("${AppRoutes.CART_DETAIL}/$email")
+                        },
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(
+                    route = "${AppRoutes.CART_DETAIL}/{email}",
+                    arguments = listOf(navArgument("email") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val email = backStackEntry.arguments?.getString("email") ?: ""
+                    CartDetailScreen(
+                        email = email,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
         
         composable(AppRoutes.ADD_PRODUCT) {
             AddProductScreen(

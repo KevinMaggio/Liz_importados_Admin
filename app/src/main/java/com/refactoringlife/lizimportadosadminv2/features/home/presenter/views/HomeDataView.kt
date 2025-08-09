@@ -24,6 +24,7 @@ import com.refactoringlife.lizimportadosadminv2.features.home.presenter.viewmode
 fun HomeDataView(
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
+    onNavigateToCarts: () -> Unit = {},
     onNavigateToAddProduct: () -> Unit = {},
     onNavigateToSelectProductForEdit: () -> Unit = {},
     onNavigateToCreateCombo: () -> Unit = {},
@@ -188,6 +189,17 @@ fun HomeDataView(
             }
             
             // Botones de acción modernos
+            // Botón de Carritos (primero)
+            LipsyActionButton(
+                text = "Gestionar Carritos",
+                icon = Icons.Default.ShoppingCart,
+                onClick = onNavigateToCarts,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                containerColor = Color(0xFF673AB7)
+            )
+
             LipsyActionButton(
                 text = "Agregar Producto",
                 icon = Icons.Default.Add,

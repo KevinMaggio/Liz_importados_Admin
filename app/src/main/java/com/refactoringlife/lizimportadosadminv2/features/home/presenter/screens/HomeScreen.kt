@@ -10,6 +10,7 @@ import com.refactoringlife.lizimportadosadminv2.features.home.presenter.viewmode
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    onNavigateToCarts:() -> Unit,
     onNavigateToAddProduct: () -> Unit,
     onNavigateToCreateCombo: () -> Unit,
     onNavigateToManageCombos: () -> Unit,
@@ -28,6 +29,7 @@ fun HomeScreen(
         onNavigateToEditProductDetail = onNavigateToEditProductDetail,
         onNavigateToDeleteProduct = onNavigateToDeleteProduct,
         onNavigateToVenderProducto = onNavigateToVenderProducto,
-        onNavigateToConfigApp = onNavigateToConfigApp
+        onNavigateToConfigApp = onNavigateToConfigApp,
+        onNavigateToCarts = onNavigateToCarts
     )
 }
