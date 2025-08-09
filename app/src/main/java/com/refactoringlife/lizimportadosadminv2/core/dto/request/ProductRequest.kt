@@ -16,7 +16,8 @@ data class ProductRequest(
     val isAvailable: Boolean? = null,
     val isOffer: Boolean? = null,
     val offerPrice: Int = 0,
-    val price: Int? = null
+    val price: Int? = null,
+    val vendidos: Int? = 0
 ) {
     // Constructor sin argumentos para Firestore
     constructor() : this(
@@ -33,6 +34,7 @@ data class ProductRequest(
         isAvailable = null,
         isOffer = null,
         offerPrice = 0,
-        price = null
+        price = null,
+        vendidos = 0
     )
 }
