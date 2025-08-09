@@ -357,13 +357,6 @@ fun AddProductScreen(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                Button(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Volver")
-                }
             }
         }
     }
